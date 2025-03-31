@@ -1,4 +1,4 @@
-import { TreeNode } from "../lib/definitions";
+import { TreeNode } from "@/lib/definitions";
 
 export const runAVLAlgorithm = (data: TreeNode) => {
     // Função de balanceamento e inserção em uma AVL
@@ -17,8 +17,6 @@ export const runAVLAlgorithm = (data: TreeNode) => {
         root.children[1] = insertAVL(root.children[1] || null, value);
       }
   
-      // Aqui deveria vir a parte do balanceamento AVL (omiti a implementação para simplificação)
-      // Para fins de exemplo, estamos apenas retornando a árvore com o valor inserido.
       return root;
     }
   

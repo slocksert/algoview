@@ -1,4 +1,4 @@
-import { TreeNode } from "../lib/definitions";
+import { TreeNode } from "@/lib/definitions";
 
 export const runBSTAlgorithm = (data: TreeNode, operation: string = 'insert', value?: number) => {
     // Função para verificar se um valor já existe na BST

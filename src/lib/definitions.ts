@@ -87,3 +87,9 @@ export interface TreeNode {
     source: D3Node;
     target: D3Node;
   }
+
+  export interface TreeNodePosition {
+    value: number;
+    initialPos: { x: number, y: number };
+    targetPos: { x: number, y: number };
+  }

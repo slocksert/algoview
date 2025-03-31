@@ -19,9 +19,9 @@
     "composite": true,
     "paths": {
       "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@algorithms/*": ["src/algorithms/*"],
-      "@definitions/*": ["src/definitions/*"],
+      "@/components/*": ["src/components/*"],
+      "@/algorithms/*": ["src/algorithm/*"],
+      "@/lib/*": ["src/lib/*"],
     }
   },
   "include": ["src"],

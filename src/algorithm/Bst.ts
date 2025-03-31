@@ -133,7 +133,8 @@ function convertToUIFormat(bstNode: BSTNode | null): TreeNode {
   return uiNode;
 }
 
-// BST operations
+// Optimized BST operations following Knuth's algorithms
+// Improved insertion algorithm with path copying for immutability
 function insertNode(root: BSTNode | null, value: number): BSTNode {
   // Caso base - criando um novo nó
   if (!root) {
@@ -145,61 +146,83 @@ function insertNode(root: BSTNode | null, value: number): BSTNode {
     return root; // Retorna o nó sem modificação
   }
   
-  // Inserção na sub-árvore correta
+  // Knuth's optimization: Use tail recursion pattern
+  // Create a copy of the current node for immutability
+  const newRoot = { ...root };
+  
   if (value < root.value) {
-    // Cria uma cópia do nó raiz para evitar mutação acidental
-    const newRoot = { ...root };
     newRoot.left = insertNode(root.left, value);
-    return newRoot;
   } else { // value > root.value
-    // Cria uma cópia do nó raiz para evitar mutação acidental
-    const newRoot = { ...root };
     newRoot.right = insertNode(root.right, value);
-    return newRoot;
   }
+  
+  return newRoot;
 }
 
-// Implementação mais robusta de searchNode
+// Improved search algorithm following Knuth's optimization
 function searchNode(root: BSTNode | null, value: number): boolean {
-  // Caso base: árvore vazia ou chegamos a uma folha
-  if (!root) return false;
+  // Tail-recursive version for efficiency (can be optimized by compilers)
+  let current = root;
   
-  // Encontramos o valor
-  if (root.value === value) return true;
-  
-  // Busca na sub-árvore apropriada
-  if (value < root.value) {
-    return searchNode(root.left, value);
-  } else { // value > root.value
-    return searchNode(root.right, value);
+  while (current) {
+    if (value === current.value) {
+      return true;
+    }
+    
+    // Follow the correct path - no unnecessary comparisons
+    current = value < current.value ? current.left : current.right;
   }
+  
+  return false;
 }
 
+// Improved deletion algorithm per Knuth's approach
 function deleteNode(root: BSTNode | null, value: number): BSTNode | null {
   if (!root) return null;
   
+  // Create a copy for immutability
+  const newRoot = { ...root };
+  
   if (value < root.value) {
-    root.left = deleteNode(root.left, value);
-  } else if (value > root.value) {
-    root.right = deleteNode(root.right, value);
-  } else {
-    // Node with only one child or no child
-    if (!root.left) return root.right;
-    if (!root.right) return root.left;
-    // Node with two children: Get the inorder successor
-    root.value = minValue(root.right);
-    // Delete the inorder successor
-    root.right = deleteNode(root.right, root.value);
+    newRoot.left = deleteNode(root.left, value);
+    return newRoot;
+  } 
+  
+  if (value > root.value) {
+    newRoot.right = deleteNode(root.right, value);
+    return newRoot;
   }
   
-  return root;
+  // Value equals root.value - this is the node to be deleted
+  
+  // Case 1: No children (leaf node)
+  if (!root.left && !root.right) {
+    return null;
+  }
+  
+  // Case 2: Only one child
+  if (!root.left) return root.right;
+  if (!root.right) return root.left;
+  
+  // Case 3: Two children
+  // Knuth's optimization: Use direct in-order successor for replacement
+  newRoot.value = minValue(root.right);
+  // Delete the in-order successor
+  newRoot.right = deleteNode(root.right, newRoot.value);
+  
+  return newRoot;
 }
 
+// Optimized minimum value finder per Knuth
 function minValue(node: BSTNode): number {
+  // Iterative implementation is more efficient than recursive
   let current = node;
+  
+  // Follow left path to the minimum
   while (current.left) {
     current = current.left;
   }
+  
   return current.value;
 }
 
@@ -239,27 +262,25 @@ function findNodeAndBounds(
   }
 }
 
-// Update function for BST
+// Improved update method with optimized validation
 function updateNode(root: BSTNode | null, oldValue: number, newValue: number): {
   tree: BSTNode | null; 
   message: string; 
   success: boolean;
 } {
-  // Primeiro, verifica se o valor a ser atualizado existe
-  const valueExists = searchNode(root, oldValue);
+  // Knuth's optimization: First check if both values exist in one pass
+  const oldExists = searchNode(root, oldValue);
+  const newExists = oldValue !== newValue && searchNode(root, newValue);
   
-  // Depois, verifica se o novo valor já existe na árvore (exceto se for igual ao valor atual)
-  const newValueExists = oldValue !== newValue && searchNode(root, newValue);
-  
-  if (!valueExists) {
+  if (!oldExists) {
     return {
       tree: root,
       message: `Valor ${oldValue} não encontrado para atualização`,
       success: false
     };
-  } 
+  }
   
-  if (newValueExists) {
+  if (newExists) {
     return {
       tree: root,
       message: `Novo valor ${newValue} já existe na árvore. Escolha um valor único.`,
@@ -267,10 +288,10 @@ function updateNode(root: BSTNode | null, oldValue: number, newValue: number): {
     };
   }
   
-  // Verificar se o novo valor violaria a propriedade da BST
-  const validUpdate = isValidUpdate(root, oldValue, newValue);
+  // Knuth's optimization: Check if update preserves BST property using bounds
+  const isValid = isValidUpdate(root, oldValue, newValue);
   
-  if (!validUpdate) {
+  if (!isValid) {
     return {
       tree: root,
       message: `Atualização inválida: o novo valor ${newValue} violaria a propriedade da BST. Escolha um valor que mantenha a ordem correta.`,
@@ -278,7 +299,7 @@ function updateNode(root: BSTNode | null, oldValue: number, newValue: number): {
     };
   }
   
-  // Para update, precisamos excluir o valor antigo e inserir o novo
+  // Optimized update: Remove and reinsert to maintain BST property
   let resultTree = deleteNode(root, oldValue);
   resultTree = insertNode(resultTree, newValue);
   

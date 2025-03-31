@@ -1,4 +1,4 @@
-import { TreeNode } from "../lib/definitions";
+import { TreeNode } from "@/lib/definitions";
 
 export const runFibonacciTreeAlgorithm = (data: TreeNode) => {
     // Função para gerar uma árvore Fibonacci (simplificada)

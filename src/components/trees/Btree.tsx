@@ -1,4 +1,4 @@
-import { TreeNode } from "../lib/definitions";
+import { TreeNode } from "@/lib/definitions";
 
 export const runBTreeAlgorithm = (data: TreeNode) => {
     // Função de inserção em uma árvore B (simplificada)

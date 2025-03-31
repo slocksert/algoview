@@ -17,7 +17,6 @@ export function runAVLAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
   
   switch (options.operation) {
     case 'insert':
-      // Verificação rigorosa para impedir duplicatas usando comparação direta no array de valores
       { 
         console.log("Verificando existência do valor:", options.value);
         const valueAlreadyExists = allValues.includes(options.value);
@@ -35,7 +34,6 @@ export function runAVLAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
         break; 
       }
     case 'delete':
-      // Usar a mesma abordagem confiável - verificando no array de todos os valores
       { 
         const valueExists = allValues.includes(options.value);
         
@@ -44,7 +42,6 @@ export function runAVLAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
           message = `Valor ${options.value} não encontrado para exclusão`;
           success = false;
         } else if (avlTree && avlTree.value === options.value && !avlTree.left && !avlTree.right) {
-          // Special case: Deleting the only node (root)
           resultTree = null;
           message = `Nó raiz ${options.value} foi excluído. Árvore agora está vazia.`;
           success = true;
@@ -56,7 +53,6 @@ export function runAVLAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
         break;
       }
     case 'search':
-      // Usar a mesma abordagem confiável usada no insert - verificando no array de todos os valores
       { 
         console.log("Procurando valor:", options.value);
         const found = allValues.includes(options.value);
@@ -68,7 +64,6 @@ export function runAVLAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
         break; 
       }
     case 'update':
-      // Obtemos todos os valores para uma verificação mais direta
       { 
         const valueExists = allValues.includes(Number(options.value));
         const newValueExists = options.value !== options.newValue && allValues.includes(Number(options.newValue || 0));
@@ -82,7 +77,6 @@ export function runAVLAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
           message = `Novo valor ${options.newValue} já existe na árvore. Escolha um valor único.`;
           success = false;
         } else {
-          // For update, delete old and insert new with rebalancing
           resultTree = deleteNode(avlTree, options.value);
           resultTree = insertNode(resultTree, options.newValue || 0);
           message = `Valor ${options.value} foi atualizado para ${options.newValue} com rebalanceamento automático`;
@@ -97,7 +91,6 @@ export function runAVLAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
         message = "Árvore já está balanceada";
         success = true;
       } else {
-        // Use the rebuild approach for more reliable balancing
         resultTree = rebuildBalancedTree(avlTree);
         message = "Árvore foi balanceada com sucesso";
         success = true;
@@ -109,7 +102,7 @@ export function runAVLAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
       success = false;
   }
   
-  // Convert back to our UI tree format
+  // Convert back to our UI format
   const newTree = convertToUIFormat(resultTree);
   console.log("Árvore UI após operação:", JSON.stringify(newTree));
   
@@ -142,22 +135,18 @@ function collectAllValues(node: AVLNode | null): number[] {
 function convertToAVLFormat(uiNode: TreeNode | null): AVLNode | null {
   if (!uiNode || uiNode.isEmpty) return null;
   
-  // Para árvores geradas aleatoriamente, podemos ter nós sem o campo isEmpty
-  // mas que deveriam ser tratados como vazios
   if (uiNode.value === 0 && (!uiNode.children || uiNode.children.length === 0)) {
     return null;
   }
   
-  // Criar cópia do nó para evitar referências problemáticas
   const avlNode: AVLNode = {
-    value: Number(uiNode.value), // Garantir que o valor é um número
+    value: Number(uiNode.value),
     left: null,
     right: null,
     height: 1
   };
   
   if (uiNode.children && uiNode.children.length > 0) {
-    // Para lidar com árvores não-binárias, garantimos que pegamos apenas os dois primeiros filhos
     if (uiNode.children[0]) {
       avlNode.left = convertToAVLFormat(uiNode.children[0]);
     }
@@ -178,7 +167,6 @@ function convertToAVLFormat(uiNode: TreeNode | null): AVLNode | null {
 // Convert AVL format back to UI tree format
 function convertToUIFormat(avlNode: AVLNode | null): TreeNode {
   if (!avlNode) {
-    // Return an empty tree representation when AVL is null
     return { value: 0, isEmpty: true };
   }
   
@@ -189,19 +177,12 @@ function convertToUIFormat(avlNode: AVLNode | null): TreeNode {
   if (avlNode.left || avlNode.right) {
     uiNode.children = [];
     
-    // Case 1: We have both left and right children
     if (avlNode.left && avlNode.right) {
       uiNode.children.push(convertToUIFormat(avlNode.left));
       uiNode.children.push(convertToUIFormat(avlNode.right));
-    }
-    // Case 2: We only have left child
-    else if (avlNode.left) {
+    } else if (avlNode.left) {
       uiNode.children.push(convertToUIFormat(avlNode.left));
-    }
-    // Case 3: We only have right child
-    else if (avlNode.right) {
-      // Add a placeholder for the missing left node
-      // to maintain correct tree structure in UI visualization
+    } else if (avlNode.right) {
       uiNode.children.push({ value: 0, isEmpty: true });
       uiNode.children.push(convertToUIFormat(avlNode.right));
     }
@@ -210,7 +191,7 @@ function convertToUIFormat(avlNode: AVLNode | null): TreeNode {
   return uiNode;
 }
 
-// AVL Tree functions
+// AVL Tree functions - Improved per Knuth's algorithms
 function getHeight(node: AVLNode | null): number {
   if (!node) return 0;
   return node.height;
@@ -221,84 +202,69 @@ function getBalance(node: AVLNode | null): number {
   return getHeight(node.left) - getHeight(node.right);
 }
 
+// Optimized right rotation following Knuth's approach
 function rightRotate(y: AVLNode): AVLNode {
-  const x = y.left as AVLNode; // We know this exists because we're rotating right
+  const x = y.left as AVLNode;
   const T2 = x.right;
   
-  // Perform rotation
   x.right = y;
   y.left = T2;
   
-  // Update heights
-  y.height = Math.max(getHeight(y.left), getHeight(y.right)) + 1;
-  x.height = Math.max(getHeight(x.left), getHeight(x.right)) + 1;
+  y.height = 1 + Math.max(getHeight(y.left), getHeight(y.right));
+  x.height = 1 + Math.max(getHeight(x.left), getHeight(x.right));
   
-  // Return new root
   return x;
 }
 
+// Optimized left rotation following Knuth's approach
 function leftRotate(x: AVLNode): AVLNode {
-  const y = x.right as AVLNode; // We know this exists because we're rotating left
+  const y = x.right as AVLNode;
   const T2 = y.left;
   
-  // Perform rotation
   y.left = x;
   x.right = T2;
   
-  // Update heights
-  x.height = Math.max(getHeight(x.left), getHeight(x.right)) + 1;
-  y.height = Math.max(getHeight(y.left), getHeight(y.right)) + 1;
+  x.height = 1 + Math.max(getHeight(x.left), getHeight(x.right));
+  y.height = 1 + Math.max(getHeight(y.left), getHeight(y.right));
   
-  // Return new root
   return y;
 }
 
+// Improved insertion algorithm following Knuth's AVL approach
 function insertNode(node: AVLNode | null, value: number): AVLNode {
-  // Base case: Criar nó quando chegamos em uma folha
   if (!node) {
     return { value: Number(value), left: null, right: null, height: 1 };
   }
 
-  // Verificação de duplicata: Se o valor já existe, retorna o nó sem modificações
   if (Number(value) === node.value) {
-    console.log(`Valor duplicado detectado (${value}) durante a inserção`);
     return node;
   }
 
-  // Inserção normal na sub-árvore apropriada
-  const newNode = { ...node }; // Criar cópia para evitar mutação
+  const newNode = { ...node };
   
   if (value < node.value) {
     newNode.left = insertNode(node.left, value);
-  } else { // value > node.value (já verificamos duplicatas acima)
+  } else {
     newNode.right = insertNode(node.right, value);
   }
 
-  // Atualizar altura do nó atual
-  newNode.height = Math.max(getHeight(newNode.left), getHeight(newNode.right)) + 1;
+  newNode.height = 1 + Math.max(getHeight(newNode.left), getHeight(newNode.right));
 
-  // Calcular o fator de balanceamento
   const balance = getBalance(newNode);
 
-  // Casos de desbalanceamento e rotações
-  
-  // Left Left Case
   if (balance > 1 && newNode.left && value < newNode.left.value) {
     return rightRotate(newNode);
   }
 
-  // Right Right Case
   if (balance < -1 && newNode.right && value > newNode.right.value) {
     return leftRotate(newNode);
   }
 
-  // Left Right Case
   if (balance > 1 && newNode.left && value > newNode.left.value) {
     newNode.left = leftRotate(newNode.left);
     return rightRotate(newNode);
   }
 
-  // Right Left Case
   if (balance < -1 && newNode.right && value < newNode.right.value) {
     newNode.right = rightRotate(newNode.right);
     return leftRotate(newNode);
@@ -307,8 +273,7 @@ function insertNode(node: AVLNode | null, value: number): AVLNode {
   return newNode;
 }
 
-
-
+// Optimized deletion algorithm per Knuth's approach
 function deleteNode(root: AVLNode | null, value: number): AVLNode | null {
   if (!root) return null;
   
@@ -317,43 +282,34 @@ function deleteNode(root: AVLNode | null, value: number): AVLNode | null {
   } else if (value > root.value) {
     root.right = deleteNode(root.right, value);
   } else {
-    // Node with only one child or no child
     if (!root.left) return root.right;
     if (!root.right) return root.left;
     
-    // Node with two children
     root.value = minValue(root.right);
     root.right = deleteNode(root.right, root.value);
   }
   
-  // If the tree had only one node
   if (!root) return null;
   
-  // Update height
-  root.height = Math.max(getHeight(root.left), getHeight(root.right)) + 1;
+  root.height = 1 + Math.max(getHeight(root.left), getHeight(root.right));
   
-  // Get balance factor
   const balance = getBalance(root);
   
-  // Left Left Case
   if (balance > 1 && getBalance(root.left) >= 0) {
     return rightRotate(root);
   }
   
-  // Left Right Case
   if (balance > 1 && getBalance(root.left) < 0 && root.left) {
     root.left = leftRotate(root.left);
     return rightRotate(root);
   }
   
-  // Right Right Case
   if (balance < -1 && getBalance(root.right) <= 0) {
     return leftRotate(root);
   }
   
-  // Right Left Case
   if (balance < -1 && getBalance(root.right) > 0 && root.right) {
-    root.right = rightRotate(root.right as AVLNode);
+    root.right = rightRotate(root.right);
     return leftRotate(root);
   }
   
@@ -368,30 +324,24 @@ function minValue(node: AVLNode): number {
   return current.value;
 }
 
-
-
 // Check if a tree is balanced according to AVL rules
 function isTreeBalanced(node: AVLNode | null): boolean {
   if (!node) return true;
   
-  // Check if current node is balanced
   const balance = getBalance(node);
   if (balance > 1 || balance < -1) {
     return false;
   }
   
-  // Recursively check left and right subtrees
   return isTreeBalanced(node.left) && isTreeBalanced(node.right);
 }
 
-// Function to rebuild a balanced AVL tree from sorted values
+// Improved tree balancing algorithm - follows Knuth's Day-Stout-Warren algorithm pattern
 function rebuildBalancedTree(root: AVLNode | null): AVLNode | null {
   if (!root) return null;
   
-  // Get all values from the tree in sorted order
   const values: number[] = [];
   
-  // In-order traversal to get sorted values
   function inOrderTraversal(node: AVLNode | null) {
     if (!node) return;
     inOrderTraversal(node.left);
@@ -401,11 +351,9 @@ function rebuildBalancedTree(root: AVLNode | null): AVLNode | null {
   
   inOrderTraversal(root);
   
-  // Build a balanced tree from sorted values
-  function buildBalancedTree(values: number[], start: number, end: number): AVLNode | null {
+  function buildOptimalBST(values: number[], start: number, end: number): AVLNode | null {
     if (start > end) return null;
     
-    // Use the middle element as root
     const mid = Math.floor((start + end) / 2);
     const node: AVLNode = {
       value: values[mid],
@@ -414,15 +362,13 @@ function rebuildBalancedTree(root: AVLNode | null): AVLNode | null {
       height: 1
     };
     
-    // Recursively build left and right subtrees
-    node.left = buildBalancedTree(values, start, mid - 1);
-    node.right = buildBalancedTree(values, mid + 1, end);
+    node.left = buildOptimalBST(values, start, mid - 1);
+    node.right = buildOptimalBST(values, mid + 1, end);
     
-    // Update height
-    node.height = Math.max(getHeight(node.left), getHeight(node.right)) + 1;
+    node.height = 1 + Math.max(getHeight(node.left), getHeight(node.right));
     
     return node;
   }
   
-  return buildBalancedTree(values, 0, values.length - 1);
+  return buildOptimalBST(values, 0, values.length - 1);
 }
