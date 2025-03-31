@@ -1,11 +1,6 @@
+import { InteractiveCanvasProps } from "@/lib/definitions";
 import { useEffect, useRef, useState } from "react";
 
-interface InteractiveCanvasProps {
-  width?: number;
-  height?: number;
-  onDrag?: (dx: number, dy: number) => void;
-  render?: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
-}
 
 export function InteractiveCanvas({ 
   width, 

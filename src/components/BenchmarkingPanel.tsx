@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,50 +7,22 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast"; // Fixed import path
-import * as d3 from "d3";
-
-// Mock data for benchmarking charts
-const generateMockBenchmarkData = (algorithms: string[], dataSize: number) => {
-  const operations = ["Insert", "Search", "Delete", "Traversal"];
-  const results: Record<string, Record<string, number>> = {};
-
-  algorithms.forEach(algo => {
-    results[algo] = {};
-    operations.forEach(op => {
-      // Generate mock time (ms) based on algorithm and data size
-      let baseTime = Math.random() * 10;
-      
-      // Make some algorithms faster/slower for different operations
-      if (algo === "bst" && op === "Search") baseTime *= 1.5;
-      if (algo === "avl" && op === "Insert") baseTime *= 2;
-      if (algo === "hash" && op === "Search") baseTime *= 0.3;
-      if (algo === "skip-list" && op === "Traversal") baseTime *= 0.7;
-      
-      // Scale with data size (not linear for all algorithms)
-      let scaleFactor = dataSize / 1000;
-      if (algo === "bst") scaleFactor = Math.log2(dataSize) / Math.log2(1000);
-      if (algo === "hash") scaleFactor = 1;
-      
-      results[algo][op] = baseTime * scaleFactor;
-    });
-  });
-  
-  return results;
-};
+import { useToast } from "@/hooks/use-toast";
+import BenchmarkResults from "./BenchmarkResults";
+import { runBenchmarks, BenchmarkResultsType } from "@/lib/benchmarking";
 
 const BenchmarkingPanel = () => {
   const [dataSize, setDataSize] = useState(1000);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<Record<string, Record<string, number>> | null>(null);
+  const [results, setResults] = useState<BenchmarkResultsType | null>(null);
   const [activeTab, setActiveTab] = useState("performance");
   const [selectedDataStructures, setSelectedDataStructures] = useState([
     "bst", "avl", "b-tree", "hash", "skip-list"
   ]);
   const { toast } = useToast();
 
-  const runBenchmark = () => {
+  const runBenchmark = async () => {
     if (selectedDataStructures.length === 0) {
       toast({
         title: "No Data Structures Selected",
@@ -59,6 +32,7 @@ const BenchmarkingPanel = () => {
       return;
     }
 
+    console.log("Starting benchmark with data size:", dataSize); // Log para depuração
     setIsRunning(true);
     setProgress(0);
     setResults(null);
@@ -68,28 +42,35 @@ const BenchmarkingPanel = () => {
       description: `Running benchmarks with data size: ${dataSize}`,
     });
     
-    // Simulate benchmark progress
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + Math.random() * 10;
-        if (newProgress >= 100) {
-          clearInterval(interval);
-          
-          // Generate mock results
-          const benchmarkResults = generateMockBenchmarkData(selectedDataStructures, dataSize);
-          setResults(benchmarkResults);
-          setIsRunning(false);
-          
-          toast({
-            title: "Benchmark Completed",
-            description: "View the results in the charts below",
-          });
-          
-          return 100;
+    try {
+      // Run real benchmarks using Benchmark.js
+      const benchmarkResults = await runBenchmarks(
+        selectedDataStructures, 
+        dataSize,
+        (progress) => {
+          console.log("Benchmark progress:", progress); // Log para depuração
+          setProgress(progress);
         }
-        return newProgress;
+      );
+      
+      console.log("Benchmark results:", benchmarkResults); // Log para depuração
+      setResults(benchmarkResults);
+      
+      toast({
+        title: "Benchmark Completed",
+        description: "View the results in the charts below",
       });
-    }, 300);
+    } catch (error) {
+      console.error("Benchmark error:", error);
+      toast({
+        title: "Benchmark Error",
+        description: "There was an error running the benchmarks",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRunning(false);
+      setProgress(100);
+    }
   };
   
   const exportResults = () => {
@@ -112,109 +93,6 @@ const BenchmarkingPanel = () => {
     });
   };
   
-  const renderBarChart = () => {
-    if (!results) return <div className="h-64 flex items-center justify-center bg-gray-50">Run benchmark to see results</div>;
-    
-    // Create the chart after the component is mounted
-    setTimeout(() => {
-      const operations = ["Insert", "Search", "Delete", "Traversal"];
-      const chartData = operations.map(op => ({
-        operation: op,
-        ...Object.fromEntries(
-          Object.entries(results).map(([algo, data]) => [
-            algo, data[op] || 0
-          ])
-        )
-      }));
-      
-      const svgRef = d3.select("#benchmark-chart");
-      if (svgRef.empty()) return;
-      
-      svgRef.selectAll("*").remove();
-      
-      const width = 600;
-      const height = 300;
-      const margin = { top: 20, right: 120, bottom: 40, left: 50 };
-      const contentWidth = width - margin.left - margin.right;
-      const contentHeight = height - margin.top - margin.bottom;
-      
-      const svg = svgRef
-        .attr("width", width)
-        .attr("height", height)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-      
-      const x = d3.scaleBand()
-        .domain(operations)
-        .range([0, contentWidth])
-        .padding(0.3);
-      
-      const y = d3.scaleLinear()
-        .domain([0, d3.max(chartData, d => 
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          d3.max(Object.entries(d).filter(([k]) => k !== "operation").map(([_, v]) => typeof v === 'number' ? v : 0))
-        ) || 10])
-        .range([contentHeight, 0]);
-      
-      // Add X axis
-      svg.append("g")
-        .attr("transform", `translate(0,${contentHeight})`)
-        .call(d3.axisBottom(x));
-      
-      // Add Y axis
-      svg.append("g")
-        .call(d3.axisLeft(y).ticks(5));
-      
-      // Y axis label
-      svg.append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", -40)
-        .attr("x", -contentHeight / 2)
-        .attr("text-anchor", "middle")
-        .text("Time (ms)");
-      
-      // Add bars
-      const algorithms = selectedDataStructures;
-      const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-      
-      algorithms.forEach((algo, i) => {
-        svg.selectAll(`.bar-${algo}`)
-          .data(chartData)
-          .enter()
-          .append("rect")
-          .attr("class", `bar-${algo}`)
-          .attr("x", d => (x(d.operation) || 0) + x.bandwidth() / algorithms.length * i)
-          .attr("width", x.bandwidth() / algorithms.length)
-          .attr("y", d => y((d as Record<string, number | string>)[algo] as number || 0))
-          .attr("height", d => contentHeight - y((d as Record<string, number | string>)[algo] as number || 0))
-          .attr("fill", colorScale(algo));
-      });
-      
-      // Add legend
-      const legend = svg.append("g")
-        .attr("transform", `translate(${contentWidth + 10}, 0)`);
-      
-      algorithms.forEach((algo, i) => {
-        const legendRow = legend.append("g")
-          .attr("transform", `translate(0, ${i * 20})`);
-        
-        legendRow.append("rect")
-          .attr("width", 10)
-          .attr("height", 10)
-          .attr("fill", colorScale(algo));
-          
-        legendRow.append("text")
-          .attr("x", 15)
-          .attr("y", 10)
-          .attr("text-anchor", "start")
-          .style("font-size", "12px")
-          .text(algo.toUpperCase());
-      });
-    }, 0);
-    
-    return <svg id="benchmark-chart"></svg>;
-  };
-  
   return (
     <div className="space-y-4">
       <Card>
@@ -229,7 +107,7 @@ const BenchmarkingPanel = () => {
                 <Slider
                   value={[dataSize]}
                   min={100}
-                  max={10000}
+                  max={1000000}
                   step={100}
                   onValueChange={(vals) => setDataSize(vals[0])}
                   disabled={isRunning}
@@ -305,20 +183,28 @@ const BenchmarkingPanel = () => {
                 </TabsList>
                 
                 <TabsContent value="performance" className="mt-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="overflow-x-auto">
-                        {renderBarChart()}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {results ? (
+                    <BenchmarkResults 
+                      results={results} 
+                      algorithms={selectedDataStructures} 
+                      dataSize={dataSize} 
+                    />
+                  ) : (
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="h-64 flex items-center justify-center bg-gray-50">
+                          Run benchmark to see performance results
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="memory" className="mt-4">
                   <Card>
                     <CardContent className="p-4">
                       <div className="h-64 flex items-center justify-center bg-gray-50">
-                        Memory usage analysis will be shown here
+                        Memory usage is only estimated - browser restrictions prevent accurate memory profiling
                       </div>
                     </CardContent>
                   </Card>
@@ -327,9 +213,31 @@ const BenchmarkingPanel = () => {
                 <TabsContent value="comparison" className="mt-4">
                   <Card>
                     <CardContent className="p-4">
-                      <div className="h-64 flex items-center justify-center bg-gray-50">
-                        Algorithm comparison will be shown here
-                      </div>
+                      {results ? (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-medium">Algorithm Complexity Comparison</h3>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="text-center p-2 border rounded">
+                              <div className="font-bold">BST</div>
+                              <div className="text-sm">O(log n) average</div>
+                              <div className="text-sm">O(n) worst case</div>
+                            </div>
+                            <div className="text-center p-2 border rounded">
+                              <div className="font-bold">AVL</div>
+                              <div className="text-sm">O(log n) guaranteed</div>
+                            </div>
+                            <div className="text-center p-2 border rounded">
+                              <div className="font-bold">Hash Table</div>
+                              <div className="text-sm">O(1) average</div>
+                              <div className="text-sm">O(n) worst case</div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-64 flex items-center justify-center bg-gray-50">
+                          Run benchmark to compare algorithms
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -359,19 +267,16 @@ const BenchmarkingPanel = () => {
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
                         {Object.entries(results)
-                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
                           .filter(([_, data]) => data.Search !== undefined)
                           .sort((a, b) => (a[1].Search || 0) - (b[1].Search || 0))[0] && (
                           <div>
                             <div className="text-3xl font-bold">
                               {Object.entries(results)
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                 .filter(([_, data]) => data.Search !== undefined)
                                 .sort((a, b) => (a[1].Search || 0) - (b[1].Search || 0))[0][0].toUpperCase()}
                             </div>
                             <div className="text-sm text-gray-500">
                               {Object.entries(results)
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                 .filter(([_, data]) => data.Search !== undefined)
                                 .sort((a, b) => (a[1].Search || 0) - (b[1].Search || 0))[0][1].Search.toFixed(2)} ms
                             </div>
@@ -386,19 +291,16 @@ const BenchmarkingPanel = () => {
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
                         {Object.entries(results)
-                          // eslint-disable-next-line @typescript-eslint/no-unused-vars
                           .filter(([_, data]) => data.Insert !== undefined)
                           .sort((a, b) => (a[1].Insert || 0) - (b[1].Insert || 0))[0] && (
                           <div>
                             <div className="text-3xl font-bold">
                               {Object.entries(results)
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                 .filter(([_, data]) => data.Insert !== undefined)
                                 .sort((a, b) => (a[1].Insert || 0) - (b[1].Insert || 0))[0][0].toUpperCase()}
                             </div>
                             <div className="text-sm text-gray-500">
                               {Object.entries(results)
-                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                 .filter(([_, data]) => data.Insert !== undefined)
                                 .sort((a, b) => (a[1].Insert || 0) - (b[1].Insert || 0))[0][1].Insert.toFixed(2)} ms
                             </div>

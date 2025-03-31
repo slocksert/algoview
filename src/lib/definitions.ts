@@ -93,3 +93,16 @@ export interface TreeNode {
     initialPos: { x: number, y: number };
     targetPos: { x: number, y: number };
   }
+
+  export interface Transform {
+    zoom: number;
+    offsetX: number;
+    offsetY: number;
+  }
+
+  export interface BenchmarkVisualizerProps {
+    data: Record<string, Record<string, number>>;
+    algorithms: string[];
+    width?: number;
+    height?: number;
+  }

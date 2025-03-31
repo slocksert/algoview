@@ -40,8 +40,8 @@ const BenchmarkResults = ({ results, algorithms, dataSize }: BenchmarkResultsPro
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
     
-    const width = 600;
-    const height = 300;
+    const width = 800; // Increased from 600
+    const height = 400; // Increased from 300
     const margin = { top: 20, right: 120, bottom: 40, left: 50 };
     const contentWidth = width - margin.left - margin.right;
     const contentHeight = height - margin.top - margin.bottom;
