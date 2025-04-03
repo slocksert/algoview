@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HashingVisualizerProps } from "@/lib/definitions";
+import { useToast } from "@/hooks/use-toast";
 
 
 const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
@@ -17,6 +18,8 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
   const [hashTable, setHashTable] = useState<Map<number, Array<{key: string, value: string}>>>(
     new Map()
   );
+
+  const { toast } = useToast();
   
   // Initialize hash table
   useEffect(() => {
@@ -54,7 +57,11 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
     // Verifica se a chave já existe no hash table
     const existingBucket = hashTable.get(hashFunction(newKey, tableSize));
     if (existingBucket?.some(item => item.key === newKey)) {
-      alert("Key already exists in the hash table!");
+      toast({
+        title: "Error",
+        description: "Key already exists in the hash table!",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -213,41 +220,41 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Hash Function Configuration</CardTitle>
+            <CardTitle>Configuração da Função Hash</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Hash Method</label>
+                <label className="text-sm font-medium">Método de Hash</label>
                 <Select value={hashMethod} onValueChange={setHashMethod} disabled>
                   <SelectTrigger>
-                    <SelectValue placeholder="Universal Hashing" />
+                    <SelectValue placeholder="Hashing Universal" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="universal">Universal Hashing</SelectItem>
+                    <SelectItem value="universal">Hashing Universal</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium">Collision Strategy</label>
+                <label className="text-sm font-medium">Estratégia de Colisão</label>
                 <Select value={collisionStrategy} onValueChange={setCollisionStrategy}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select collision strategy" />
+                    <SelectValue placeholder="Selecione a estratégia de colisão" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="chaining">Chaining</SelectItem>
-                    <SelectItem value="linear-probing">Linear Probing</SelectItem>
-                    <SelectItem value="double-hashing">Double Hashing</SelectItem>
+                    <SelectItem value="chaining">Encadeamento</SelectItem>
+                    <SelectItem value="linear-probing">Sondagem Linear</SelectItem>
+                    <SelectItem value="double-hashing">Hashing Duplo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium">Table Size</label>
+                <label className="text-sm font-medium">Tamanho da Tabela</label>
                 <Select value={tableSize.toString()} onValueChange={(value) => setTableSize(Number(value))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select table size" />
+                    <SelectValue placeholder="Selecione o tamanho da tabela" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="5">5</SelectItem>
@@ -263,29 +270,29 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Add New Item</CardTitle>
+            <CardTitle>Adicionar Novo Item</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Key</label>
+                  <label className="text-sm font-medium">Chave</label>
                   <Input 
                     value={newKey} 
                     onChange={(e) => setNewKey(e.target.value)}
-                    placeholder="Enter key"
+                    placeholder="Digite a chave"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Value</label>
+                  <label className="text-sm font-medium">Valor</label>
                   <Input 
                     value={newValue} 
                     onChange={(e) => setNewValue(e.target.value)}
-                    placeholder="Enter value"
+                    placeholder="Digite o valor"
                   />
                 </div>
               </div>
-              <Button onClick={addItem} className="w-full">Add to Hash Table</Button>
+              <Button onClick={addItem} className="w-full">Adicionar à Tabela Hash</Button>
             </div>
           </CardContent>
         </Card>
@@ -293,7 +300,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Hash Table Visualization</CardTitle>
+          <CardTitle>Visualização da Tabela Hash</CardTitle>
         </CardHeader>
         <CardContent>
           <svg 
@@ -307,7 +314,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
       </Card>
       
       <div className="text-sm text-gray-500">
-        <p>This visualization shows a hash table using universal hash function with {collisionStrategy} for collision resolution.</p>
+        <p>Esta visualização mostra uma tabela hash usando a função hash universal com {collisionStrategy} para resolução de colisões.</p>
       </div>
     </div>
   );

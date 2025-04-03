@@ -12,7 +12,7 @@ export default function KnuthVisualizer() {
   return (
     <>
       <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Visualizador de Algoritmo de Knuth</h1>
+        <h1 className="text-3xl font-bold mb-6">Visualizador de Algoritmos</h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
           <TabsList className="mb-4">

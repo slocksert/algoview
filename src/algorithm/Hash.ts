@@ -250,19 +250,23 @@ export function runHashAlgorithm(tree: TreeNode, operation: any): {
   
   // Convert tree to hash table if needed (for benchmarking)
   if (tree && !tree.isEmpty) {
-    const processNode = (node: TreeNode) => {
+    // Replace recursive approach with iterative using a stack
+    const stack: TreeNode[] = [tree];
+    
+    while (stack.length > 0) {
+      const node = stack.pop()!;
+      
       if (node && !node.isEmpty) {
         hashTable.insert(node.value, node.value);
         
         if (node.children) {
-          for (const child of node.children) {
-            processNode(child);
+          // Push children in reverse order for correct processing
+          for (let i = node.children.length - 1; i >= 0; i--) {
+            stack.push(node.children[i]);
           }
         }
       }
-    };
-    
-    processNode(tree);
+    }
   }
   
   // Perform operation
@@ -272,10 +276,10 @@ export function runHashAlgorithm(tree: TreeNode, operation: any): {
       message = success ? `Inserted ${operation.value}` : `Failed to insert ${operation.value}`;
       break;
     case 'search':
-      const result = hashTable.search(operation.value);
+      { const result = hashTable.search(operation.value);
       success = result !== undefined;
       message = success ? `Found ${operation.value}` : `Did not find ${operation.value}`;
-      break;
+      break; }
     case 'delete':
       success = hashTable.delete(operation.value);
       message = success ? `Deleted ${operation.value}` : `Failed to delete ${operation.value}`;

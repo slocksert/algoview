@@ -18,7 +18,7 @@ export interface TreeNode {
   }
   
   export interface AlgorithmOperation {
-    operation: 'insert' | 'delete' | 'search' | 'update' | 'balance';
+    operation: 'insert' | 'delete' | 'search' | 'traverse';
     value: number;
     newValue?: number;
   }
@@ -33,7 +33,7 @@ export interface TreeNode {
 
   export interface TreeVisualizerProps {
     data: TreeNode;
-    type?: 'bst' | 'avl' | 'b-tree' | 'fibonacci';
+    type?: 'bst' | 'avl';
     preserveViewOnUpdate?: boolean;
   }
 
@@ -60,7 +60,7 @@ export interface TreeNode {
   }
 
   export interface AlgorithmOperation {
-    operation: 'insert' | 'delete' | 'search' | 'update' | 'balance';
+    operation: 'insert' | 'delete' | 'search' | 'traverse';
     value: number;
     newValue?: number;
   }

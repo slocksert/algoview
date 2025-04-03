@@ -76,92 +76,152 @@ export function runBSTAlgorithm(treeData: TreeNode, options: AlgorithmOperation)
 function convertToBSTFormat(uiNode: TreeNode | null): BSTNode | null {
   if (!uiNode || uiNode.isEmpty) return null;
   
-  const bstNode: BSTNode = {
+  // Create the root node
+  const root: BSTNode = {
     value: uiNode.value,
     left: null,
     right: null
   };
   
-  if (uiNode.children && uiNode.children.length > 0) {
-    // Filho esquerdo - garante que não é vazio
-    if (uiNode.children[0] && !uiNode.children[0].isEmpty) {
-      bstNode.left = convertToBSTFormat(uiNode.children[0]);
-    }
+  // Use a stack to process nodes iteratively
+  interface StackItem {
+    uiNode: TreeNode;
+    bstNode: BSTNode;
+  }
+  
+  const stack: StackItem[] = [{ uiNode, bstNode: root }];
+  
+  while (stack.length > 0) {
+    const { uiNode, bstNode } = stack.pop()!;
     
-    // Filho direito - apenas se houver mais de um filho
-    if (uiNode.children.length > 1 && !uiNode.children[1].isEmpty) {
-      bstNode.right = convertToBSTFormat(uiNode.children[1]);
+    if (uiNode.children && uiNode.children.length > 0) {
+      // Process left child
+      if (uiNode.children[0] && !uiNode.children[0].isEmpty) {
+        const leftBSTNode: BSTNode = {
+          value: uiNode.children[0].value,
+          left: null,
+          right: null
+        };
+        bstNode.left = leftBSTNode;
+        stack.push({ uiNode: uiNode.children[0], bstNode: leftBSTNode });
+      }
+      
+      // Process right child
+      if (uiNode.children.length > 1 && !uiNode.children[1].isEmpty) {
+        const rightBSTNode: BSTNode = {
+          value: uiNode.children[1].value,
+          left: null,
+          right: null
+        };
+        bstNode.right = rightBSTNode;
+        stack.push({ uiNode: uiNode.children[1], bstNode: rightBSTNode });
+      }
     }
   }
   
-  return bstNode;
+  return root;
 }
 
 // Convert BST format (left/right) back to our UI tree format (children array)
 function convertToUIFormat(bstNode: BSTNode | null): TreeNode {
   if (!bstNode) {
-    // Return an empty tree representation when BST is null
     return { value: 0, isEmpty: true };
   }
   
-  const uiNode: TreeNode = {
+  // Create the root node for UI format
+  const rootUI: TreeNode = {
     value: bstNode.value
   };
   
-  // Verificamos se temos filhos para criar o array
-  if (bstNode.left || bstNode.right) {
-    uiNode.children = [];
+  // Use a stack to process nodes iteratively
+  interface StackItem {
+    bstNode: BSTNode;
+    uiNode: TreeNode;
+  }
+  
+  const stack: StackItem[] = [{ bstNode, uiNode: rootUI }];
+  
+  while (stack.length > 0) {
+    const { bstNode, uiNode } = stack.pop()!;
     
-    // Caso 1: Temos tanto filho esquerdo quanto direito
-    if (bstNode.left && bstNode.right) {
-      uiNode.children.push(convertToUIFormat(bstNode.left));
-      uiNode.children.push(convertToUIFormat(bstNode.right));
-    }
-    // Caso 2: Temos apenas filho esquerdo
-    else if (bstNode.left) {
-      uiNode.children.push(convertToUIFormat(bstNode.left));
-    }
-    // Caso 3: Temos apenas filho direito
-    else if (bstNode.right) {
-      // É essencial adicionar um placeholder para o nó esquerdo ausente
-      // para manter a estrutura correta da árvore na visualização da UI
-      uiNode.children.push({ value: 0, isEmpty: true });
-      uiNode.children.push(convertToUIFormat(bstNode.right));
+    // If there are children, create the children array
+    if (bstNode.left || bstNode.right) {
+      uiNode.children = [];
+      
+      // Case 1: Both left and right children exist
+      if (bstNode.left && bstNode.right) {
+        const leftUI: TreeNode = { value: bstNode.left.value };
+        const rightUI: TreeNode = { value: bstNode.right.value };
+        
+        uiNode.children.push(leftUI);
+        uiNode.children.push(rightUI);
+        
+        stack.push({ bstNode: bstNode.left, uiNode: leftUI });
+        stack.push({ bstNode: bstNode.right, uiNode: rightUI });
+      }
+      // Case 2: Only left child exists
+      else if (bstNode.left) {
+        const leftUI: TreeNode = { value: bstNode.left.value };
+        uiNode.children.push(leftUI);
+        stack.push({ bstNode: bstNode.left, uiNode: leftUI });
+      }
+      // Case 3: Only right child exists
+      else if (bstNode.right) {
+        uiNode.children.push({ value: 0, isEmpty: true });
+        const rightUI: TreeNode = { value: bstNode.right.value };
+        uiNode.children.push(rightUI);
+        stack.push({ bstNode: bstNode.right, uiNode: rightUI });
+      }
     }
   }
   
-  return uiNode;
+  return rootUI;
 }
 
-// Optimized BST operations following Knuth's algorithms
-// Improved insertion algorithm with path copying for immutability
+// BST operations following Knuth's algorithms
+// Insertion algorithm with iterative approach
 function insertNode(root: BSTNode | null, value: number): BSTNode {
-  // Caso base - criando um novo nó
+  // Base case - creating a new node
   if (!root) {
     return { value, left: null, right: null };
   }
   
-  // Verificação de duplicata - não faz nada se o valor já existir
-  if (value === root.value) {
-    return root; // Retorna o nó sem modificação
-  }
-  
-  // Knuth's optimization: Use tail recursion pattern
-  // Create a copy of the current node for immutability
+  // Clone the tree for immutability
   const newRoot = { ...root };
+  let current = newRoot;
+  const path: { node: BSTNode, direction: 'left' | 'right' }[] = [];
   
-  if (value < root.value) {
-    newRoot.left = insertNode(root.left, value);
-  } else { // value > root.value
-    newRoot.right = insertNode(root.right, value);
+  // Find the insertion point
+  while (true) {
+    if (value === current.value) {
+      return newRoot; // Value already exists, return unchanged
+    }
+    
+    if (value < current.value) {
+      if (current.left === null) {
+        current.left = { value, left: null, right: null };
+        break;
+      } else {
+        path.push({ node: current, direction: 'left' });
+        current = current.left;
+      }
+    } else {
+      if (current.right === null) {
+        current.right = { value, left: null, right: null };
+        break;
+      } else {
+        path.push({ node: current, direction: 'right' });
+        current = current.right;
+      }
+    }
   }
   
   return newRoot;
 }
 
-// Improved search algorithm following Knuth's optimization
+// Search algorithm following Knuth's approach
 function searchNode(root: BSTNode | null, value: number): boolean {
-  // Tail-recursive version for efficiency (can be optimized by compilers)
+  // Tail-recursive version for efficiency (can be compiled to loops)
   let current = root;
   
   while (current) {
@@ -176,7 +236,7 @@ function searchNode(root: BSTNode | null, value: number): boolean {
   return false;
 }
 
-// Improved deletion algorithm per Knuth's approach
+// Deletion algorithm per Knuth's approach
 function deleteNode(root: BSTNode | null, value: number): BSTNode | null {
   if (!root) return null;
   
@@ -213,7 +273,7 @@ function deleteNode(root: BSTNode | null, value: number): BSTNode | null {
   return newRoot;
 }
 
-// Optimized minimum value finder per Knuth
+// Minimum value finder per Knuth
 function minValue(node: BSTNode): number {
   // Iterative implementation is more efficient than recursive
   let current = node;
@@ -247,22 +307,41 @@ function findNodeAndBounds(
   upperBound: number,
   parent: BSTNode | null
 ): { found: boolean; lowerBound: number; upperBound: number; parent: BSTNode | null } {
-  if (!node) return { found: false, lowerBound, upperBound, parent };
+  let current = node;
+  let currentParent = parent;
+  let currentLowerBound = lowerBound;
+  let currentUpperBound = upperBound;
   
-  if (node.value === value) {
-    return { found: true, lowerBound, upperBound, parent };
+  while (current) {
+    if (current.value === value) {
+      return { 
+        found: true, 
+        lowerBound: currentLowerBound, 
+        upperBound: currentUpperBound,
+        parent: currentParent 
+      };
+    }
+    
+    if (value < current.value) {
+      currentUpperBound = current.value;
+      currentParent = current;
+      current = current.left;
+    } else {
+      currentLowerBound = current.value;
+      currentParent = current;
+      current = current.right;
+    }
   }
   
-  if (value < node.value) {
-    // Se vamos para esquerda, o limite superior é o valor do nó atual
-    return findNodeAndBounds(node.left, value, lowerBound, node.value, node);
-  } else {
-    // Se vamos para direita, o limite inferior é o valor do nó atual
-    return findNodeAndBounds(node.right, value, node.value, upperBound, node);
-  }
+  return { 
+    found: false, 
+    lowerBound: currentLowerBound, 
+    upperBound: currentUpperBound,
+    parent: currentParent 
+  };
 }
 
-// Improved update method with optimized validation
+// Update method with validation
 function updateNode(root: BSTNode | null, oldValue: number, newValue: number): {
   tree: BSTNode | null; 
   message: string; 
@@ -299,7 +378,7 @@ function updateNode(root: BSTNode | null, oldValue: number, newValue: number): {
     };
   }
   
-  // Optimized update: Remove and reinsert to maintain BST property
+  // Update: Remove and reinsert to maintain BST property
   let resultTree = deleteNode(root, oldValue);
   resultTree = insertNode(resultTree, newValue);
   

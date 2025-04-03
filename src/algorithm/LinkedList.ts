@@ -388,19 +388,23 @@ export function runLinkedListAlgorithm(tree: TreeNode, operation: any): {
   
   // Convert tree to linked list if needed
   if (tree && !tree.isEmpty) {
-    const processNode = (node: TreeNode) => {
+    // Replace recursive approach with iterative using a stack
+    const stack: TreeNode[] = [tree];
+    
+    while (stack.length > 0) {
+      const node = stack.pop()!;
+      
       if (node && !node.isEmpty) {
         linkedList.insert(Number(node.value));
         
         if (node.children) {
-          for (const child of node.children) {
-            processNode(child);
+          // Push children in reverse order for correct processing order
+          for (let i = node.children.length - 1; i >= 0; i--) {
+            stack.push(node.children[i]);
           }
         }
       }
-    };
-    
-    processNode(tree);
+    }
   }
   
   // Perform operation
@@ -410,13 +414,13 @@ export function runLinkedListAlgorithm(tree: TreeNode, operation: any): {
       message = success ? `Inserted ${operation.value}` : `Failed to insert ${operation.value}`;
       break;
     case 'search':
-      const index = linkedList.search(operation.value);
+      { const index = linkedList.search(operation.value);
       success = index !== -1;
       message = success ? `Found ${operation.value} at index ${index}` : `Did not find ${operation.value}`;
-      break;
+      break; }
     case 'delete':
       // Delete by value for benchmarking
-      const deleteIndex = linkedList.search(operation.value);
+      { const deleteIndex = linkedList.search(operation.value);
       if (deleteIndex !== -1) {
         success = linkedList.delete(deleteIndex);
         message = success ? `Deleted ${operation.value}` : `Failed to delete ${operation.value}`;
@@ -424,7 +428,7 @@ export function runLinkedListAlgorithm(tree: TreeNode, operation: any): {
         success = false;
         message = `Value ${operation.value} not found for deletion`;
       }
-      break;
+      break; }
     case 'traverse':
       linkedList.toArray();
       success = true;

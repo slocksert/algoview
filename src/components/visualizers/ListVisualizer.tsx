@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ListVisualizerProps } from "@/lib/definitions";
+import { useToast } from "@/hooks/use-toast";
 
 
 const ListVisualizer = ({ data }: ListVisualizerProps) => {
@@ -14,19 +15,26 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
   const [newValue, setNewValue] = useState("");
   const [newPosition, setNewPosition] = useState("0");
   const [animation, setAnimation] = useState<string | null>(null);
-  
+  const [animatedNodes, setAnimatedNodes] = useState<number[]>([]);
+
+  const { toast } = useToast();
+
   // Add element to list
   const addElement = () => {
     const position = parseInt(newPosition);
     if (isNaN(position) || position < 0 || position > listData.length) {
-      alert("Invalid position!");
+      toast({
+        title: "Posição inválida!",
+        description: "Escolha uma posição válida para adicionar o elemento.",
+        variant: "destructive",
+      });
       return;
     }
     if (!newValue) return;
     const value = parseInt(newValue);
-    
+
     if (isNaN(value)) return;
-    
+
     const newData = [...listData];
     if (position >= 0 && position <= newData.length) {
       newData.splice(position, 0, value);
@@ -34,31 +42,44 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
       setNewValue("");
     }
   };
-  
+
   // Remove element from list
   const removeElement = () => {
     const position = parseInt(newPosition);
     if (isNaN(position) || position < 0 || position >= listData.length) {
-      alert("Invalid position!");
+      toast({
+        title: "Posição inválida!",
+        description: "Escolha uma posição válida para remover o elemento.",
+        variant: "destructive",
+      });
       return;
     }
     if (listData.length === 0) return;
-    
+
     if (position >= 0 && position < listData.length) {
       const newData = [...listData];
       newData.splice(position, 1);
       setListData(newData);
     }
   };
-  
+
   // Run self-organizing list algorithms
   const runMoveToFront = () => {
     if (listData.length <= 1) return;
-    
+
+    const targetIndex = parseInt(newPosition);
+    if (isNaN(targetIndex) || targetIndex < 0 || targetIndex >= listData.length) {
+      toast({
+        title: "Posição inválida!",
+        description: "Escolha uma posição válida para mover o elemento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAnimatedNodes([targetIndex]);
     setAnimation("move-to-front");
-    
-    // Simulate searching for an element and moving it to front
-    const targetIndex = Math.floor(Math.random() * listData.length);
+
     setTimeout(() => {
       const newData = [...listData];
       const target = newData[targetIndex];
@@ -66,16 +87,36 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
       newData.unshift(target);
       setListData(newData);
       setAnimation(null);
+      setAnimatedNodes([]);
     }, 1500);
   };
-  
+
   const runTransposition = () => {
     if (listData.length <= 1) return;
+
+    const targetIndex = parseInt(newPosition);
+    if (isNaN(targetIndex) || targetIndex < 0 || targetIndex >= listData.length) {
+      toast({
+        title: "Posição inválida!",
+        description: "Escolha uma posição válida para transpor os elementos.",
+        variant: "destructive",
+      });
+      return;
+    }
     
+    // Precisa ter um elemento anterior para fazer a transposição
+    if (targetIndex <= 0) {
+      toast({
+        title: "Transposição inválida!",
+        description: "Escolha uma posição válida para transpor os elementos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAnimatedNodes([targetIndex - 1, targetIndex]);
     setAnimation("transposition");
-    
-    // Simulate searching for an element and swapping with predecessor
-    const targetIndex = Math.floor(Math.random() * (listData.length - 1)) + 1;
+
     setTimeout(() => {
       const newData = [...listData];
       const temp = newData[targetIndex];
@@ -83,41 +124,42 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
       newData[targetIndex - 1] = temp;
       setListData(newData);
       setAnimation(null);
+      setAnimatedNodes([]);
     }, 1500);
   };
-  
+
   useEffect(() => {
     if (!svgRef.current) return;
-    
+
     // Clear previous SVG content
     d3.select(svgRef.current).selectAll("*").remove();
-    
+
     const svg = d3.select(svgRef.current);
     const height = 200;
     const nodeRadius = 25;
     const nodeDistance = 120;
-    
+
     const g = svg.append("g")
       .attr("transform", `translate(50, ${height / 2})`);
-    
+
     // Draw nodes
     listData.forEach((value, i) => {
       // Node
       const nodeG = g.append("g")
         .attr("transform", `translate(${i * nodeDistance}, 0)`)
         .attr("class", "node");
-      
+
       // Node circle
       nodeG.append("circle")
         .attr("r", nodeRadius)
         .attr("fill", () => {
-          if (animation === "move-to-front" && i === 0) return "#4CAF50";
-          if (animation === "transposition" && (i === 0 || i === 1)) return "#2196F3";
+          if (animation === "move-to-front" && animatedNodes.includes(i)) return "#4CAF50";
+          if (animation === "transposition" && animatedNodes.includes(i)) return "#2196F3";
           return "#FF5722";
         })
         .attr("stroke", "#fff")
         .attr("stroke-width", 2);
-      
+
       // Node value
       nodeG.append("text")
         .attr("text-anchor", "middle")
@@ -125,7 +167,7 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
         .attr("fill", "white")
         .attr("font-weight", "bold")
         .text(value);
-      
+
       // For doubly linked lists, add backward pointers
       if (listType === "doubly" && i > 0) {
         // Draw backward arrow
@@ -136,7 +178,7 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
           .attr("fill", "none")
           .attr("marker-end", "url(#arrow)");
       }
-      
+
       // For skip lists, add skip connections
       if (listType === "skip" && i % 2 === 0 && i < listData.length - 2) {
         const skipDistance = 2 * nodeDistance;
@@ -149,7 +191,7 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
           .attr("marker-end", "url(#arrow)");
       }
     });
-    
+
     // Define arrow marker
     svg.append("defs").append("marker")
       .attr("id", "arrow")
@@ -162,13 +204,13 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
       .append("path")
       .attr("d", "M0,-5L10,0L0,5")
       .attr("fill", "#999");
-    
+
     // Draw forward connections between nodes
     listData.forEach((_, i) => {
       if (i < listData.length - 1) {
         const startX = i * nodeDistance + nodeRadius;
         const endX = (i + 1) * nodeDistance - nodeRadius;
-        
+
         g.append("path")
           .attr("d", `M${startX} 0 L${endX} 0`)
           .attr("stroke", "#999")
@@ -177,7 +219,7 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
           .attr("marker-end", "url(#arrow)");
       }
     });
-    
+
     // If using self-organizing list algorithms, add visual cues
     if (animation) {
       if (animation === "move-to-front") {
@@ -187,7 +229,7 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
           .attr("text-anchor", "middle")
           .attr("font-size", "14px")
           .attr("fill", "#4CAF50")
-          .text("Move-To-Front: Element moved to head of list");
+          .text("Move-To-Front: Elemento movido para o início da lista");
       } else if (animation === "transposition") {
         g.append("text")
           .attr("x", nodeDistance / 2)
@@ -195,98 +237,97 @@ const ListVisualizer = ({ data }: ListVisualizerProps) => {
           .attr("text-anchor", "middle")
           .attr("font-size", "14px")
           .attr("fill", "#2196F3")
-          .text("Transposition: Elements swapped");
+          .text("Transposição: Elementos trocados");
       }
     }
-    
-  }, [listData, listType, animation]);
-  
+
+  }, [listData, listType, animation, animatedNodes, svgRef]);
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Linked List Configuration</CardTitle>
+            <CardTitle>Configuração da Lista Encadeada</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <Select value={listType} onValueChange={setListType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select list type" />
+                  <SelectValue placeholder="Selecione o tipo de lista" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="singly">Singly Linked List</SelectItem>
-                  <SelectItem value="doubly">Doubly Linked List</SelectItem>
+                  <SelectItem value="singly">Lista Encadeada Simples</SelectItem>
+                  <SelectItem value="doubly">Lista Duplamente Encadeada</SelectItem>
                   <SelectItem value="skip">Skip List</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <div className="grid grid-cols-2 gap-2">
-                <Button onClick={runMoveToFront} disabled={!!animation}>Move-To-Front</Button>
-                <Button onClick={runTransposition} disabled={!!animation}>Transposition</Button>
+                <Button onClick={runMoveToFront} disabled={!!animation}>Mover para Frente</Button>
+                <Button onClick={runTransposition} disabled={!!animation}>Transposição</Button>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle>Modify List</CardTitle>
+            <CardTitle>Modificar Lista</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Value</label>
-                  <Input 
-                    value={newValue} 
+                  <label className="text-sm font-medium">Valor</label>
+                  <Input
+                    value={newValue}
                     onChange={(e) => setNewValue(e.target.value)}
-                    placeholder="Enter value"
+                    placeholder="Digite um valor"
                     type="number"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Position</label>
-                  <Input 
-                    value={newPosition} 
+                  <label className="text-sm font-medium">Posição</label>
+                  <Input
+                    value={newPosition}
                     onChange={(e) => setNewPosition(e.target.value)}
-                    placeholder="Enter position"
+                    placeholder="Digite a posição"
                     type="number"
                     min="0"
-                    max={listData.length.toString()}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Button onClick={addElement}>Add Element</Button>
-                <Button onClick={removeElement} variant="destructive">Remove Element</Button>
+                <Button onClick={addElement}>Adicionar Elemento</Button>
+                <Button onClick={removeElement} variant="destructive">Remover Elemento</Button>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-      
+
       <Card>
         <CardHeader>
-          <CardTitle>Linked List Visualization</CardTitle>
+          <CardTitle>Visualização da Lista Encadeada</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-auto">
-            <svg 
-              ref={svgRef} 
-              width="100%" 
-              height="200" 
+            <svg
+              ref={svgRef}
+              width="100%"
+              height="200"
               viewBox="0 0 800 200"
               preserveAspectRatio="xMidYMid meet"
             ></svg>
           </div>
         </CardContent>
       </Card>
-      
+
       <div className="text-sm text-gray-500">
-        <p>This visualization shows a {listType} linked list with {listData.length} elements.</p>
+        <p>Esta visualização mostra uma {listType === "singly" ? "simples" : listType === "doubly" ? "duplamente encadeada" : "skip"} lista encadeada com {listData.length} elementos.</p>
         {listType === "skip" && (
-          <p>Skip lists allow for faster traversal by providing "shortcuts" between distant nodes.</p>
+          <p>As Skip Lists permitem uma travessia mais rápida fornecendo "atalhos" entre nós distantes.</p>
         )}
       </div>
     </div>

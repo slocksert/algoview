@@ -55,7 +55,7 @@ const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ data, type = "bst" }) =
     const maxDepth = root.height || 3;
     
     // Determine node sizing based on tree type and depth
-    const nodeRadius = type === "b-tree" ? 25 : 20;
+    const nodeRadius = 20;
     
     // For deeper trees, adjust spacing
     const verticalSpacing = Math.min(80, innerHeight / (maxDepth + 1));
@@ -147,10 +147,6 @@ const TreeVisualizer: React.FC<TreeVisualizerProps> = ({ data, type = "bst" }) =
         switch (type) {
           case "avl":
             return "#4CAF50"; // Green for AVL
-          case "b-tree":
-            return "#2196F3"; // Blue for B-Tree  
-          case "fibonacci":
-            return "#9C27B0"; // Purple for Fibonacci
           default:
             return "#FF5722"; // Orange for BST
         }

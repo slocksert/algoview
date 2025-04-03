@@ -49,32 +49,68 @@ const generateBalancedTree = (size: number): TreeNode => {
     values.push(i);
   }
 
-  const buildBalancedTree = (arr: number[], start: number, end: number): TreeNode => {
-    if (start > end) {
-      return { value: 0, isEmpty: true };
-    }
+  interface StackFrame {
+    start: number;
+    end: number;
+    parent: TreeNode;
+    isLeftChild: boolean;
+  }
 
+  const root: TreeNode = { value: 0 };
+  const stack: StackFrame[] = [];
+  
+  stack.push({
+    start: 0,
+    end: values.length - 1,
+    parent: root,
+    isLeftChild: true
+  });
+  
+  while (stack.length > 0) {
+    const { start, end, parent, isLeftChild } = stack.pop()!;
+    
+    if (start > end) continue;
+    
     const mid = Math.floor((start + end) / 2);
-    const node: TreeNode = { value: arr[mid] };
-
-    if (start !== end) {
-      node.children = [];
-      if (start <= mid - 1) {
-        node.children.push(buildBalancedTree(arr, start, mid - 1));
+    const node: TreeNode = { value: values[mid] };
+    
+    if (parent === root) {
+      root.value = values[mid];
+    } else {
+      if (!parent.children) {
+        parent.children = [];
       }
-      if (mid + 1 <= end) {
-        const leftExists = start <= mid - 1;
-        if (!leftExists) {
-          node.children.push({ value: 0, isEmpty: true });
+      
+      if (isLeftChild) {
+        parent.children[0] = node;
+      } else {
+        if (parent.children.length === 0) {
+          parent.children[0] = { value: 0, isEmpty: true };
         }
-        node.children.push(buildBalancedTree(arr, mid + 1, end));
+        parent.children[1] = node;
       }
     }
-
-    return node;
-  };
-
-  return buildBalancedTree(values, 0, values.length - 1);
+    
+    if (mid + 1 <= end) {
+      stack.push({
+        start: mid + 1,
+        end: end,
+        parent: node,
+        isLeftChild: false
+      });
+    }
+    
+    if (start <= mid - 1) {
+      stack.push({
+        start: start,
+        end: mid - 1,
+        parent: node,
+        isLeftChild: true
+      });
+    }
+  }
+  
+  return root;
 };
 
 const generateTestValues = (size: number): number[] => {
@@ -88,6 +124,51 @@ const manualBenchmark = (fn: () => void, iterations = 50): number => {
   }
   const end = performance.now();
   return (end - start) / iterations;
+};
+
+// Função especial de benchmark para travessia que é mais precisa
+// para operações muito rápidas executando mais iterações
+const traversalBenchmark = (fn: () => any, expectedSize: number): number => {
+  // Aumentamos o número de iterações para operações rápidas
+  const minIterations = 20;
+  const maxIterations = 100;
+  
+  // Primeiro, validamos se a travessia retorna o número correto de elementos
+  const result = fn();
+  const actualSize = Array.isArray(result) ? result.length : 
+                    (typeof result === 'object' && result !== null) ? 
+                    Object.keys(result).length : 0;
+  
+  console.log(`Traverse validation: expected ${expectedSize}, actual ${actualSize}`);
+  
+  if (actualSize < expectedSize * 0.9) {
+    console.warn(`⚠️ Traverse may be incomplete. Expected ~${expectedSize} items, got ${actualSize}`);
+  }
+  
+  // Executa a travessia várias vezes para obter uma medição mais precisa
+  // Aumenta o número de iterações para operações mais rápidas
+  let totalTime = 0;
+  const iterations = Math.max(minIterations, Math.min(maxIterations, Math.ceil(1000 / expectedSize)));
+  
+  // Executa um teste preliminar para estimar o tempo
+  const startPrelim = performance.now();
+  for (let i = 0; i < 5; i++) {
+    fn();
+  }
+  const prelimTime = performance.now() - startPrelim;
+  
+  // Se for muito rápido, aumenta ainda mais as iterações
+  const finalIterations = prelimTime < 10 ? iterations * 10 : iterations;
+  
+  console.log(`Running traverse benchmark with ${finalIterations} iterations`);
+  
+  const start = performance.now();
+  for (let i = 0; i < finalIterations; i++) {
+    fn();
+  }
+  const end = performance.now();
+  
+  return (end - start) / finalIterations;
 };
 
 export const createBenchmarkTree = (dataSize: number, forceBalanced = true) => {
@@ -115,10 +196,11 @@ export const createBenchmarkTree = (dataSize: number, forceBalanced = true) => {
 export const runBenchmarks = async (
   algorithms: string[],
   dataSize: number,
-  onProgress: (progress: number) => void
+  onProgress: (progress: number) => void,
+  useOptimized: boolean = true
 ): Promise<BenchmarkResultsType> => {
   const results: BenchmarkResultsType = {};
-  const operations = ['insert', 'search', 'delete'];
+  const operations = ['insert', 'search', 'delete', 'traverse'];
   const totalTests = algorithms.length * operations.length + algorithms.length;
   let testsCompleted = 0;
 
@@ -128,30 +210,23 @@ export const runBenchmarks = async (
     results[algo] = {};
   });
 
-  console.log(`Starting benchmarks for ${dataSize} nodes`);
+  console.log(`Starting benchmarks for ${dataSize} nodes with optimization: ${useOptimized}`);
   
   const algorithmTrees: Record<string, TreeNode> = {};
-  const actualSizes: Record<string, number> = {};
   
   availableAlgorithms.forEach(algo => {
     let tree: TreeNode;
-    const safeSize = Math.min(dataSize, algo === 'bst' ? 1000 : 10000);
     
     if (algo === 'bst') {
-      tree = generateUnbalancedBST(safeSize);
+      tree = generateUnbalancedBST(dataSize);
     } else if (algo === 'avl') {
-      tree = generateRandomAVL(safeSize);
+      tree = generateRandomAVL(dataSize);
     } else {
-      tree = generateBalancedTree(safeSize);
-    }
-    
-    if (safeSize < dataSize) {
-      console.warn(`⚠️ Limiting ${algo} tree to ${safeSize} nodes for performance safety (requested: ${dataSize})`);
-      console.warn(`   Results will be scaled to simulate ${dataSize} nodes behavior`);
+      tree = generateBalancedTree(dataSize);
     }
     
     algorithmTrees[algo] = tree;
-    actualSizes[algo] = safeSize;
+    console.log(`Created ${algo} tree with ${dataSize} nodes`);
   });
   
   const testValues = generateTestValues(Math.min(dataSize, 100));
@@ -180,88 +255,57 @@ export const runBenchmarks = async (
           
           const algorithmFn = getAlgorithmFunction(algo);
           const initialTree = algorithmTrees[algo];
-          const actualSize = actualSizes[algo];
           
-          console.log(`Running ${op} benchmark on ${algo} with actual tree size: ${actualSize}`);
+          console.log(`Running ${op} benchmark on ${algo} with tree size: ${dataSize}`);
+          
+          const iterations = Math.max(3, Math.min(20, 2000 / dataSize));
           
           if (op === 'insert') {
-            const iterations = Math.max(5, Math.min(20, 1000 / dataSize));
-            
             msPerOp = manualBenchmark(() => {
-              algorithmFn(initialTree, {
-                operation: 'insert',
-                value: testValues[Math.floor(Math.random() * testValues.length)]
-              });
-            }, iterations);
-            
-            const actualDataSize = Math.min(dataSize, 10000);
-            if (dataSize > actualDataSize) {
-              console.log(`Scaling ${algo} ${op} time from ${actualDataSize} to ${dataSize} nodes`);
-              
-              let scalingFactor;
               if (algo === 'hash') {
-                scalingFactor = dataSize / actualDataSize; // Linear for hash
-              } else if (algo === 'bst') {
-                scalingFactor = dataSize / actualDataSize; // O(n) in worst case
+                algorithmFn(initialTree, {
+                  operation: 'insert',
+                  value: testValues[Math.floor(Math.random() * testValues.length)],
+                  optimized: useOptimized
+                });
               } else {
-                scalingFactor = Math.log2(dataSize) / Math.log2(actualDataSize); // O(log n)
+                algorithmFn(initialTree, {
+                  operation: 'insert',
+                  value: testValues[Math.floor(Math.random() * testValues.length)]
+                });
               }
-              
-              msPerOp *= scalingFactor;
-            }
+            }, iterations);
           } else if (op === 'search') {
-            const iterations = Math.max(10, Math.min(50, 2000 / dataSize));
-            
             msPerOp = manualBenchmark(() => {
-              algorithmFn(initialTree, {
-                operation: 'search',
-                value: Math.floor(Math.random() * dataSize) + 1
-              });
-            }, iterations);
-            
-            const actualDataSize = Math.min(dataSize, 10000);
-            if (dataSize > actualDataSize) {
-              console.log(`Scaling ${algo} ${op} time from ${actualDataSize} to ${dataSize} nodes`);
-              
-              let scalingFactor;
               if (algo === 'hash') {
-                scalingFactor = 1; // Constant for hash
-              } else if (algo === 'bst') {
-                scalingFactor = dataSize / actualDataSize; // O(n) in worst case
+                algorithmFn(initialTree, {
+                  operation: 'search',
+                  value: Math.floor(Math.random() * dataSize) + 1,
+                  optimized: useOptimized
+                });
               } else {
-                scalingFactor = Math.log2(dataSize) / Math.log2(actualDataSize); // O(log n)
+                algorithmFn(initialTree, {
+                  operation: 'search',
+                  value: Math.floor(Math.random() * dataSize) + 1
+                });
               }
-              
-              msPerOp *= scalingFactor;
-            }
+            }, iterations);
           } else if (op === 'delete') {
-            const iterations = Math.max(5, Math.min(20, 1000 / dataSize));
-            
             msPerOp = manualBenchmark(() => {
-              algorithmFn(initialTree, {
-                operation: 'delete',
-                value: Math.floor(Math.random() * dataSize) + 1
-              });
-            }, iterations);
-            
-            const actualDataSize = Math.min(dataSize, 10000);
-            if (dataSize > actualDataSize) {
-              console.log(`Scaling ${algo} ${op} time from ${actualDataSize} to ${dataSize} nodes`);
-              
-              let scalingFactor;
               if (algo === 'hash') {
-                scalingFactor = 1; // Constant for hash
-              } else if (algo === 'bst') {
-                scalingFactor = dataSize / actualDataSize; // O(n) in worst case
+                algorithmFn(initialTree, {
+                  operation: 'delete',
+                  value: Math.floor(Math.random() * dataSize) + 1,
+                  optimized: useOptimized
+                });
               } else {
-                scalingFactor = Math.log2(dataSize) / Math.log2(actualDataSize); // O(log n)
+                algorithmFn(initialTree, {
+                  operation: 'delete',
+                  value: Math.floor(Math.random() * dataSize) + 1
+                });
               }
-              
-              msPerOp *= scalingFactor;
-            }
+            }, iterations);
           }
-          
-          msPerOp *= 0.95 + Math.random() * 0.1;
           
           const capitalized = op.charAt(0).toUpperCase() + op.slice(1);
           results[algo][capitalized] = msPerOp;
@@ -288,24 +332,24 @@ export const runBenchmarks = async (
         };
         
         const algorithmFn = getAlgorithmFunction(algo);
-        const iterations = Math.max(2, Math.min(10, 500 / dataSize));
         
-        const traversalTime = manualBenchmark(() => {
-          algorithmFn(algorithmTrees[algo], {
-            operation: 'traverse',
-          });
-        }, iterations);
+        // Use a função especializada para benchmarking de travessia
+        const traversalFn = () => {
+          if (algo === 'hash') {
+            return algorithmFn(algorithmTrees[algo], {
+              operation: 'traverse',
+              optimized: useOptimized
+            }).result;
+          } else {
+            return algorithmFn(algorithmTrees[algo], {
+              operation: 'traverse',
+            }).result;
+          }
+        };
         
-        const actualDataSize = Math.min(dataSize, 5000);
-        let scaledTraversalTime = traversalTime;
+        const traversalTime = traversalBenchmark(traversalFn, dataSize);
         
-        if (dataSize > actualDataSize) {
-          console.log(`Scaling ${algo} traversal time from ${actualDataSize} to ${dataSize} nodes`);
-          
-          scaledTraversalTime *= dataSize / actualDataSize; // O(n) for all traversals
-        }
-        
-        results[algo]['Traversal'] = scaledTraversalTime;
+        results[algo]['Traversal'] = traversalTime;
         resolve();
       }, 100);
     });

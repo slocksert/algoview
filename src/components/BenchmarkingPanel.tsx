@@ -25,21 +25,21 @@ const BenchmarkingPanel = () => {
   const runBenchmark = async () => {
     if (selectedDataStructures.length === 0) {
       toast({
-        title: "No Data Structures Selected",
-        description: "Please select at least one data structure to benchmark.",
+        title: "Nenhuma Estrutura de Dados Selecionada",
+        description: "Por favor, selecione pelo menos uma estrutura de dados para benchmark.",
         variant: "destructive",
       });
       return;
     }
 
-    console.log("Starting benchmark with data size:", dataSize); // Log para depuração
+    console.log("Iniciando benchmark com tamanho de dados:", dataSize);
     setIsRunning(true);
     setProgress(0);
     setResults(null);
     
     toast({
-      title: "Benchmark Started",
-      description: `Running benchmarks with data size: ${dataSize}`,
+      title: "Benchmark Iniciado",
+      description: `Executando benchmarks com tamanho de dados: ${dataSize}`,
     });
     
     try {
@@ -48,23 +48,23 @@ const BenchmarkingPanel = () => {
         selectedDataStructures, 
         dataSize,
         (progress) => {
-          console.log("Benchmark progress:", progress); // Log para depuração
+          console.log("Progresso do benchmark:", progress);
           setProgress(progress);
         }
       );
       
-      console.log("Benchmark results:", benchmarkResults); // Log para depuração
+      console.log("Resultados do benchmark:", benchmarkResults);
       setResults(benchmarkResults);
       
       toast({
-        title: "Benchmark Completed",
-        description: "View the results in the charts below",
+        title: "Benchmark Concluído",
+        description: "Veja os resultados nos gráficos abaixo",
       });
     } catch (error) {
-      console.error("Benchmark error:", error);
+      console.error("Erro no benchmark:", error);
       toast({
-        title: "Benchmark Error",
-        description: "There was an error running the benchmarks",
+        title: "Erro no Benchmark",
+        description: "Ocorreu um erro ao executar os benchmarks",
         variant: "destructive",
       });
     } finally {
@@ -88,8 +88,8 @@ const BenchmarkingPanel = () => {
     URL.revokeObjectURL(href);
     
     toast({
-      title: "Results Exported",
-      description: "Benchmark results saved as JSON",
+      title: "Resultados Exportados",
+      description: "Resultados do benchmark salvos como JSON",
     });
   };
   
@@ -97,17 +97,17 @@ const BenchmarkingPanel = () => {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Algorithm Benchmarking</CardTitle>
+          <CardTitle>Benchmark de Algoritmos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Data Size: {dataSize.toLocaleString()}</Label>
+                <Label>Tamanho dos Dados: {dataSize.toLocaleString()}</Label>
                 <Slider
                   value={[dataSize]}
                   min={100}
-                  max={1000000}
+                  max={10000}
                   step={100}
                   onValueChange={(vals) => setDataSize(vals[0])}
                   disabled={isRunning}
@@ -115,13 +115,13 @@ const BenchmarkingPanel = () => {
               </div>
               
               <div className="space-y-2">
-                <Label>Select Data Structures to Benchmark</Label>
+                <Label>Selecione as Estruturas de Dados para Benchmark</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: "bst", label: "Binary Search Tree" },
-                    { id: "avl", label: "AVL Tree" },
-                    { id: "hash", label: "Hash Table" },
-                    { id: "skip-list", label: "Skip List" },
+                    { id: "bst", label: "Árvore Binária de Busca" },
+                    { id: "avl", label: "Árvore AVL" },
+                    { id: "hash", label: "Tabela Hash" },
+                    { id: "skip-list", label: "Lista Skip" },
                   ].map(item => (
                     <div key={item.id} className="flex items-center space-x-2">
                       <Checkbox 
@@ -153,7 +153,7 @@ const BenchmarkingPanel = () => {
                   disabled={isRunning || selectedDataStructures.length === 0}
                   className="flex-1"
                 >
-                  {isRunning ? "Running..." : "Run Benchmark"}
+                  {isRunning ? "Executando..." : "Executar Benchmark"}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -161,13 +161,13 @@ const BenchmarkingPanel = () => {
                   disabled={!results}
                   className="flex-1"
                 >
-                  Export Results
+                  Exportar Resultados
                 </Button>
               </div>
               
               {isRunning && (
                 <div className="space-y-2">
-                  <Label>Progress</Label>
+                  <Label>Progresso</Label>
                   <Progress value={progress} />
                 </div>
               )}
@@ -176,9 +176,9 @@ const BenchmarkingPanel = () => {
             <div className="space-y-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="w-full">
-                  <TabsTrigger value="performance" className="flex-1">Performance</TabsTrigger>
-                  <TabsTrigger value="memory" className="flex-1">Memory Usage</TabsTrigger>
-                  <TabsTrigger value="comparison" className="flex-1">Comparison</TabsTrigger>
+                  <TabsTrigger value="performance" className="flex-1">Desempenho</TabsTrigger>
+                  <TabsTrigger value="memory" className="flex-1">Uso de Memória</TabsTrigger>
+                  <TabsTrigger value="comparison" className="flex-1">Comparação</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="performance" className="mt-4">
@@ -192,7 +192,7 @@ const BenchmarkingPanel = () => {
                     <Card>
                       <CardContent className="p-4">
                         <div className="h-64 flex items-center justify-center bg-gray-50">
-                          Run benchmark to see performance results
+                          Execute o benchmark para ver os resultados de desempenho
                         </div>
                       </CardContent>
                     </Card>
@@ -203,7 +203,7 @@ const BenchmarkingPanel = () => {
                   <Card>
                     <CardContent className="p-4">
                       <div className="h-64 flex items-center justify-center bg-gray-50">
-                        Memory usage is only estimated - browser restrictions prevent accurate memory profiling
+                        O uso de memória é apenas estimado - restrições do navegador impedem a análise precisa de memória
                       </div>
                     </CardContent>
                   </Card>
@@ -214,27 +214,27 @@ const BenchmarkingPanel = () => {
                     <CardContent className="p-4">
                       {results ? (
                         <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Algorithm Complexity Comparison</h3>
+                          <h3 className="text-lg font-medium">Comparação de Complexidade de Algoritmos</h3>
                           <div className="grid grid-cols-3 gap-4">
                             <div className="text-center p-2 border rounded">
                               <div className="font-bold">BST</div>
-                              <div className="text-sm">O(log n) average</div>
-                              <div className="text-sm">O(n) worst case</div>
+                              <div className="text-sm">O(log n) média</div>
+                              <div className="text-sm">O(n) pior caso</div>
                             </div>
                             <div className="text-center p-2 border rounded">
                               <div className="font-bold">AVL</div>
-                              <div className="text-sm">O(log n) guaranteed</div>
+                              <div className="text-sm">O(log n) garantido</div>
                             </div>
                             <div className="text-center p-2 border rounded">
-                              <div className="font-bold">Hash Table</div>
-                              <div className="text-sm">O(1) average</div>
-                              <div className="text-sm">O(n) worst case</div>
+                              <div className="font-bold">Tabela Hash</div>
+                              <div className="text-sm">O(1) média</div>
+                              <div className="text-sm">O(n) pior caso</div>
                             </div>
                           </div>
                         </div>
                       ) : (
                         <div className="h-64 flex items-center justify-center bg-gray-50">
-                          Run benchmark to compare algorithms
+                          Execute o benchmark para comparar algoritmos
                         </div>
                       )}
                     </CardContent>
@@ -249,12 +249,12 @@ const BenchmarkingPanel = () => {
       {results && (
         <Card>
           <CardHeader>
-            <CardTitle>Summary Results</CardTitle>
+            <CardTitle>Resumo dos Resultados</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <p className="text-sm">
-                Benchmark completed with data size: <strong>{dataSize.toLocaleString()}</strong>
+                Benchmark concluído com tamanho de dados: <strong>{dataSize.toLocaleString()}</strong>
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -262,7 +262,7 @@ const BenchmarkingPanel = () => {
                   <>
                     <Card>
                       <CardHeader className="p-4">
-                        <CardTitle className="text-lg">Fastest Search</CardTitle>
+                        <CardTitle className="text-lg">Busca Mais Rápida</CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
                         {Object.entries(results)
@@ -286,7 +286,7 @@ const BenchmarkingPanel = () => {
                     
                     <Card>
                       <CardHeader className="p-4">
-                        <CardTitle className="text-lg">Fastest Insert</CardTitle>
+                        <CardTitle className="text-lg">Inserção Mais Rápida</CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
                         {Object.entries(results)
@@ -310,7 +310,7 @@ const BenchmarkingPanel = () => {
                     
                     <Card>
                       <CardHeader className="p-4">
-                        <CardTitle className="text-lg">Best Overall</CardTitle>
+                        <CardTitle className="text-lg">Melhor Geral</CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 pt-0">
                         <div>
@@ -322,7 +322,7 @@ const BenchmarkingPanel = () => {
                               }))
                               .sort((a, b) => a.avg - b.avg)[0]?.algo.toUpperCase()}
                           </div>
-                          <div className="text-sm text-gray-500">Best average performance</div>
+                          <div className="text-sm text-gray-500">Melhor desempenho médio</div>
                         </div>
                       </CardContent>
                     </Card>

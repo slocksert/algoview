@@ -171,19 +171,23 @@ export function runSkipListAlgorithm(tree: TreeNode, operation: any): {
   
   // Convert tree to skip list if needed
   if (tree && !tree.isEmpty) {
-    const processNode = (node: TreeNode) => {
+    // Replace recursive processNode with iterative approach
+    const stack: TreeNode[] = [tree];
+    
+    while (stack.length > 0) {
+      const node = stack.pop()!;
+      
       if (node && !node.isEmpty) {
         skipList.insert(Number(node.value));
         
         if (node.children) {
-          for (const child of node.children) {
-            processNode(child);
+          // Push children in reverse order so they're processed in the original order
+          for (let i = node.children.length - 1; i >= 0; i--) {
+            stack.push(node.children[i]);
           }
         }
       }
-    };
-    
-    processNode(tree);
+    }
   }
   
   // Perform operation

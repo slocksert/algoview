@@ -25,7 +25,7 @@ const BenchmarkResults = ({ results, algorithms, dataSize }: BenchmarkResultsPro
   const renderChart = () => {
     if (!results || !svgRef.current) return;
     
-    const operations = ["Insert", "Search", "Delete", "Traversal"];
+    const operations = ["Inserir", "Buscar", "Deletar", "Travessia"];
     const chartData = operations.map(op => ({
       operation: op,
       ...Object.fromEntries(
@@ -88,7 +88,7 @@ const BenchmarkResults = ({ results, algorithms, dataSize }: BenchmarkResultsPro
       .attr("y", -40)
       .attr("x", -contentHeight / 2)
       .attr("text-anchor", "middle")
-      .text("Time (ms)");
+      .text("Tempo (ms)");
     
     // Add bars
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
@@ -147,14 +147,14 @@ const BenchmarkResults = ({ results, algorithms, dataSize }: BenchmarkResultsPro
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Performance Comparison</CardTitle>
+        <CardTitle>Comparação de Performance</CardTitle>
       </CardHeader>
       <CardContent>
         <svg ref={svgRef} />
         
         <div className="mt-4 text-sm text-gray-500">
-          <p>Benchmark results for data size: {dataSize.toLocaleString()} elements</p>
-          <p>Lower bars indicate better performance (less time)</p>
+          <p>Resultado do Benchmark: {dataSize.toLocaleString()} elements</p>
+          <p>Barras menores indicam melhor performance (menos tempo)</p>
         </div>
       </CardContent>
     </Card>
