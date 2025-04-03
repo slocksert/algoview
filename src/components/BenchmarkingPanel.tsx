@@ -18,7 +18,7 @@ const BenchmarkingPanel = () => {
   const [results, setResults] = useState<BenchmarkResultsType | null>(null);
   const [activeTab, setActiveTab] = useState("performance");
   const [selectedDataStructures, setSelectedDataStructures] = useState([
-    "bst", "avl", "b-tree", "hash", "skip-list"
+    "bst", "avl", "hash", "skip-list"
   ]);
   const { toast } = useToast();
 
@@ -120,7 +120,6 @@ const BenchmarkingPanel = () => {
                   {[
                     { id: "bst", label: "Binary Search Tree" },
                     { id: "avl", label: "AVL Tree" },
-                    { id: "b-tree", label: "B-Tree" },
                     { id: "hash", label: "Hash Table" },
                     { id: "skip-list", label: "Skip List" },
                   ].map(item => (

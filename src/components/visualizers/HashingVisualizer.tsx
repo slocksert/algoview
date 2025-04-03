@@ -9,7 +9,7 @@ import { HashingVisualizerProps } from "@/lib/definitions";
 
 const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const [hashMethod, setHashMethod] = useState("division");
+  const [hashMethod, setHashMethod] = useState("universal");
   const [collisionStrategy, setCollisionStrategy] = useState("chaining");
   const [tableSize, setTableSize] = useState(10);
   const [newKey, setNewKey] = useState("");
@@ -29,58 +29,36 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
     
     // Add initial data
     for (const [key, value] of data.entries()) {
-      const hashIndex = hashFunction(key, hashMethod, tableSize);
+      const hashIndex = hashFunction(key, tableSize);
       const bucket = initialTable.get(hashIndex) || [];
       bucket.push({ key, value: String(value) });
       initialTable.set(hashIndex, bucket);
     }
     
     setHashTable(initialTable);
-  }, [data, tableSize, hashMethod]);
+  }, [data, tableSize]);
   
-  const hashFunction = (key: string, method: string, size: number): number => {
+  const hashFunction = (key: string, size: number): number => {
+    // Universal hashing only
+    const primeNumber = 31;
     let hash = 0;
-    
-    switch (method) {
-      case "division":
-        // Simple division method
-        for (let i = 0; i < key.length; i++) {
-          hash += key.charCodeAt(i);
-        }
-        return hash % size;
-        
-      case "multiplication":
-        // Multiplication method (Knuth's multiplicative method)
-        { const A = 0.6180339887; // (sqrt(5) - 1) / 2
-        for (let i = 0; i < key.length; i++) {
-          hash += key.charCodeAt(i);
-        }
-        return Math.floor(size * ((hash * A) % 1)); }
-        
-      case "universal":
-        // Simplified universal hashing
-        { const primeNumber = 31;
-        for (let i = 0; i < key.length; i++) {
-          hash = (hash * primeNumber + key.charCodeAt(i)) % size;
-        }
-        return hash; }
-        
-      default:
-        return 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash * primeNumber + key.charCodeAt(i)) % size;
     }
+    return hash;
   };
   
   const addItem = () => {
     if (!newKey || !newValue) return;
 
     // Verifica se a chave já existe no hash table
-    const existingBucket = hashTable.get(hashFunction(newKey, hashMethod, tableSize));
+    const existingBucket = hashTable.get(hashFunction(newKey, tableSize));
     if (existingBucket?.some(item => item.key === newKey)) {
       alert("Key already exists in the hash table!");
       return;
     }
 
-    const hashIndex = hashFunction(newKey, hashMethod, tableSize);
+    const hashIndex = hashFunction(newKey, tableSize);
     const newHashTable = new Map(hashTable);
     
     if (collisionStrategy === "chaining") {
@@ -108,7 +86,14 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
       // Simplified double hashing
       let i = 0;
       let probeIndex = hashIndex;
-      const step = 1 + (hashFunction(newKey, "universal", tableSize - 1));
+      const step = 1 + ((key) => {
+        let h = 0;
+        const prime = 17; // Different prime for secondary hash
+        for (let i = 0; i < key.length; i++) {
+          h = (h * prime + key.charCodeAt(i)) % (tableSize - 1);
+        }
+        return h;
+      })(newKey);
       
       while (true) {
         const bucket = newHashTable.get(probeIndex) || [];
@@ -234,13 +219,11 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Hash Method</label>
-                <Select value={hashMethod} onValueChange={setHashMethod}>
+                <Select value={hashMethod} onValueChange={setHashMethod} disabled>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select hash method" />
+                    <SelectValue placeholder="Universal Hashing" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="division">Division Method</SelectItem>
-                    <SelectItem value="multiplication">Multiplication Method</SelectItem>
                     <SelectItem value="universal">Universal Hashing</SelectItem>
                   </SelectContent>
                 </Select>
@@ -324,7 +307,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
       </Card>
       
       <div className="text-sm text-gray-500">
-        <p>This visualization shows a hash table using {hashMethod} hash function with {collisionStrategy} for collision resolution.</p>
+        <p>This visualization shows a hash table using universal hash function with {collisionStrategy} for collision resolution.</p>
       </div>
     </div>
   );

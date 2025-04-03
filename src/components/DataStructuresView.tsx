@@ -7,12 +7,10 @@ import TreeOperations from "@/components/TreeOperations";
 import { useToast } from "@/hooks/use-toast";
 import { runBSTAlgorithm } from "@/algorithm/Bst";
 import { runAVLAlgorithm } from "@/algorithm/Avl";
-import { runBTreeAlgorithm } from "@/algorithm/Btree";
-import { runFibonacciTreeAlgorithm } from "@/algorithm/Fibonacci";
 import { TreeNode, AlgorithmOperation } from "@/lib/definitions";
 
 export default function DataStructuresView() {
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState<'bst' | 'avl' | 'b-tree' | 'fibonacci'>("bst");
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<'bst' | 'avl'>('bst');
   const [isRunning, setIsRunning] = useState(false);
   const [operationMessage, setOperationMessage] = useState("");
   const [searchResult, setSearchResult] = useState<string>("");
@@ -117,11 +115,6 @@ export default function DataStructuresView() {
         case "avl":
           result = runAVLAlgorithm(treeData, operation);
           break;
-        case "b-tree":
-          result = runBTreeAlgorithm(treeData, operation);
-          break;
-        case "fibonacci":
-          result = runFibonacciTreeAlgorithm(treeData, operation);
           break;
         default:
           throw new Error("Algoritmo não suportado");
@@ -182,7 +175,7 @@ export default function DataStructuresView() {
   };
 
   const handleAlgorithmChange = (value: string) => {
-    setSelectedAlgorithm(value as 'bst' | 'avl' | 'b-tree' | 'fibonacci');
+    setSelectedAlgorithm(value as 'bst' | 'avl');
   };
 
   return (
@@ -195,8 +188,6 @@ export default function DataStructuresView() {
           <SelectContent>
             <SelectItem value="bst">BST</SelectItem>
             <SelectItem value="avl">AVL</SelectItem>
-            <SelectItem value="b-tree">B Tree</SelectItem>
-            <SelectItem value="fibonacci">Fibonacci Tree</SelectItem>
           </SelectContent>
         </Select>
 
