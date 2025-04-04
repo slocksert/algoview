@@ -20,16 +20,16 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
   );
 
   const { toast } = useToast();
-  
+
   // Initialize hash table
   useEffect(() => {
     const initialTable = new Map<number, Array<{key: string, value: string}>>();
-    
+
     // Initialize empty buckets
     for (let i = 0; i < tableSize; i++) {
       initialTable.set(i, []);
     }
-    
+
     // Add initial data
     for (const [key, value] of data.entries()) {
       const hashIndex = hashFunction(key, tableSize);
@@ -37,10 +37,10 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
       bucket.push({ key, value: String(value) });
       initialTable.set(hashIndex, bucket);
     }
-    
+
     setHashTable(initialTable);
   }, [data, tableSize]);
-  
+
   const hashFunction = (key: string, size: number): number => {
     // Universal hashing only
     const primeNumber = 31;
@@ -50,7 +50,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
     }
     return hash;
   };
-  
+
   const addItem = () => {
     if (!newKey || !newValue) return;
 
@@ -58,8 +58,8 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
     const existingBucket = hashTable.get(hashFunction(newKey, tableSize));
     if (existingBucket?.some(item => item.key === newKey)) {
       toast({
-        title: "Error",
-        description: "Key already exists in the hash table!",
+        title: "Erro",
+        description: "Cha chave já existe na tabela hash.",
         variant: "destructive",
       });
       return;
@@ -67,7 +67,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
 
     const hashIndex = hashFunction(newKey, tableSize);
     const newHashTable = new Map(hashTable);
-    
+
     if (collisionStrategy === "chaining") {
       // For chaining, just add to the bucket
       const bucket = newHashTable.get(hashIndex) || [];
@@ -101,7 +101,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
         }
         return h;
       })(newKey);
-      
+
       while (true) {
         const bucket = newHashTable.get(probeIndex) || [];
         if (bucket.length === 0) {
@@ -117,28 +117,28 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
         }
       }
     }
-    
+
     setHashTable(newHashTable);
     setNewKey("");
     setNewValue("");
   };
-  
+
   useEffect(() => {
     if (!svgRef.current) return;
-    
+
     // Clear previous SVG content
     d3.select(svgRef.current).selectAll("*").remove();
-    
+
     const svg = d3.select(svgRef.current);
     const width = 700;
     const margin = { top: 20, right: 20, bottom: 30, left: 40 };
-    
+
     const g = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
-    
+
     const boxWidth = (width - margin.left - margin.right) / tableSize;
     const boxHeight = 60;
-    
+
     // Draw hash table boxes
     for (let i = 0; i < tableSize; i++) {
       g.append("rect")
@@ -149,14 +149,14 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
         .attr("fill", "white")
         .attr("stroke", "#ddd")
         .attr("stroke-width", 1);
-      
+
       g.append("text")
         .attr("x", i * boxWidth + boxWidth / 2)
         .attr("y", 20)
         .attr("text-anchor", "middle")
         .attr("font-size", "12px")
         .text(`[${i}]`);
-      
+
       const bucket = hashTable.get(i) || [];
       if (bucket.length > 0) {
         // For chaining visualization
@@ -176,7 +176,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
               .duration(500)
               .delay(idx * 100)
               .attr("opacity", 1);
-            
+
             g.append("text")
               .attr("x", i * boxWidth + boxWidth / 2)
               .attr("y", 45 + idx * 30)
@@ -201,7 +201,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
             .attr("stroke", "#1976D2")
             .attr("rx", 3)
             .attr("ry", 3);
-          
+
           g.append("text")
             .attr("x", i * boxWidth + boxWidth / 2)
             .attr("y", 45)
@@ -212,9 +212,9 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
         }
       }
     }
-    
+
   }, [hashTable, tableSize, collisionStrategy]);
-  
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -235,7 +235,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Estratégia de Colisão</label>
                 <Select value={collisionStrategy} onValueChange={setCollisionStrategy}>
@@ -249,7 +249,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tamanho da Tabela</label>
                 <Select value={tableSize.toString()} onValueChange={(value) => setTableSize(Number(value))}>
@@ -267,7 +267,7 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Adicionar Novo Item</CardTitle>
@@ -277,16 +277,16 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Chave</label>
-                  <Input 
-                    value={newKey} 
+                  <Input
+                    value={newKey}
                     onChange={(e) => setNewKey(e.target.value)}
                     placeholder="Digite a chave"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Valor</label>
-                  <Input 
-                    value={newValue} 
+                  <Input
+                    value={newValue}
                     onChange={(e) => setNewValue(e.target.value)}
                     placeholder="Digite o valor"
                   />
@@ -297,22 +297,22 @@ const HashingVisualizer = ({ data }: HashingVisualizerProps) => {
           </CardContent>
         </Card>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Visualização da Tabela Hash</CardTitle>
         </CardHeader>
         <CardContent>
-          <svg 
-            ref={svgRef} 
-            width="100%" 
-            height="400" 
+          <svg
+            ref={svgRef}
+            width="100%"
+            height="400"
             viewBox="0 0 700 400"
             preserveAspectRatio="xMidYMid meet"
           ></svg>
         </CardContent>
       </Card>
-      
+
       <div className="text-sm text-gray-500">
         <p>Esta visualização mostra uma tabela hash usando a função hash universal com {collisionStrategy} para resolução de colisões.</p>
       </div>
