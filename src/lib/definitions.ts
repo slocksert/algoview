@@ -70,6 +70,7 @@ export interface TreeNode {
     operation: string;
     success: boolean;
     message?: string;
+    result?: number[];
   }
 
   export interface ViewDimensions {

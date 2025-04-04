@@ -5,6 +5,13 @@ import { runLinkedListAlgorithm } from '@/algorithm/LinkedList';
 import { runSkipListAlgorithm } from '@/algorithm/SkipList';
 import { TreeNode } from '@/lib/definitions';
 
+// Extend AlgorithmOperation interface to include the optimized property
+declare module '@/lib/definitions' {
+  interface AlgorithmOperation {
+    optimized?: boolean;
+  }
+}
+
 export type BenchmarkResultsType = Record<string, Record<string, number>>;
 
 const generateUnbalancedBST = (size: number): TreeNode => {
@@ -128,7 +135,7 @@ const manualBenchmark = (fn: () => void, iterations = 50): number => {
 
 // Função especial de benchmark para travessia que é mais precisa
 // para operações muito rápidas executando mais iterações
-const traversalBenchmark = (fn: () => any, expectedSize: number): number => {
+const traversalBenchmark = (fn: () => unknown, expectedSize: number): number => {
   // Aumentamos o número de iterações para operações rápidas
   const minIterations = 20;
   const maxIterations = 100;
@@ -147,7 +154,6 @@ const traversalBenchmark = (fn: () => any, expectedSize: number): number => {
   
   // Executa a travessia várias vezes para obter uma medição mais precisa
   // Aumenta o número de iterações para operações mais rápidas
-  let totalTime = 0;
   const iterations = Math.max(minIterations, Math.min(maxIterations, Math.ceil(1000 / expectedSize)));
   
   // Executa um teste preliminar para estimar o tempo
@@ -336,14 +342,18 @@ export const runBenchmarks = async (
         // Use a função especializada para benchmarking de travessia
         const traversalFn = () => {
           if (algo === 'hash') {
-            return algorithmFn(algorithmTrees[algo], {
+            const response = algorithmFn(algorithmTrees[algo], {
               operation: 'traverse',
+              value: 0, // Add default value to satisfy the interface requirement
               optimized: useOptimized
-            }).result;
+            });
+            return 'traverseResult' in response ? response.traverseResult : [];
           } else {
-            return algorithmFn(algorithmTrees[algo], {
+            const response = algorithmFn(algorithmTrees[algo], {
               operation: 'traverse',
-            }).result;
+              value: 0, // Add a default value to satisfy the interface requirement
+            });
+            return 'traverseResult' in response ? response.traverseResult : [];
           }
         };
         
