@@ -17,7 +17,7 @@ export default function DataStructuresView() {
   const { toast } = useToast();
 
   const [treeData, setTreeData] = useState<TreeNode>({
-    value: 1,
+    value: 10,
   });
 
 
