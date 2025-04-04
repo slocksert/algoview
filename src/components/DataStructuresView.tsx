@@ -17,82 +17,9 @@ export default function DataStructuresView() {
   const { toast } = useToast();
 
   const [treeData, setTreeData] = useState<TreeNode>({
-    value: 50,
-    children: [
-      { value: 30, children: [{ value: 20 }, { value: 40 }] },
-      { value: 70, children: [{ value: 60 }, { value: 80 }] }
-    ]
+    value: 1,
   });
 
-  const generateRandomTreeData = () => {
-    try {
-      if (isRunning) return;
-      
-      setIsRunning(true);
-      setSearchResult("");
-      
-      if (selectedAlgorithm === "bst") {
-        const generateBST = (depth: number, min: number, max: number): TreeNode | null => {
-          if (depth <= 0 || max <= min) return null;
-          
-          const value = Math.floor(Math.random() * (max - min)) + min;
-          const node: TreeNode = { value };
-          const leftChild = generateBST(depth - 1, min, value);
-          const rightChild = generateBST(depth - 1, value + 1, max);
-          
-          if (leftChild || rightChild) {
-            node.children = [];
-            if (leftChild) node.children.push(leftChild);
-            if (rightChild) node.children.push(rightChild);
-          }
-          
-          return node;
-        };
-        
-        const newTree = generateBST(3, 1, 100);
-        if (newTree) {
-          setTreeData(newTree);
-        }
-      } else {
-        const generateTree = (depth: number): TreeNode | null => {
-          if (depth <= 0) return null;
-          
-          const value = Math.floor(Math.random() * 100) + 1;
-          const node: TreeNode = { value };
-          const childCount = Math.floor(Math.random() * 3);
-          
-          if (childCount > 0 && depth > 1) {
-            node.children = [];
-            for (let i = 0; i < childCount; i++) {
-              const child = generateTree(depth - 1);
-              if (child) node.children.push(child);
-            }
-          }
-          
-          return node;
-        };
-        
-        const newTree = generateTree(3);
-        if (newTree) {
-          setTreeData(newTree);
-        }
-      }
-      
-      toast({
-        title: "Árvore Gerada",
-        description: "Uma nova árvore aleatória foi gerada",
-      });
-    } catch (error) {
-      console.error("Erro ao gerar árvore:", error);
-      toast({
-        title: "Erro",
-        description: "Falha ao gerar árvore aleatória",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRunning(false);
-    }
-  };
 
   const executeOperation = (operation: AlgorithmOperation) => {
     if (isRunning) return;
@@ -115,7 +42,6 @@ export default function DataStructuresView() {
         case "avl":
           result = runAVLAlgorithm(treeData, operation);
           break;
-          break;
         default:
           throw new Error("Algoritmo não suportado");
       }
@@ -124,14 +50,14 @@ export default function DataStructuresView() {
         if (result.newTree) {
           setTreeData(result.newTree);
         }
-        
+
         if (result.message) {
           setOperationMessage(result.message);
         }
-        
+
         if (operation.operation === 'search') {
-          setSearchResult(result.found 
-            ? `Valor ${operation.value} encontrado na árvore` 
+          setSearchResult(result.found
+            ? `Valor ${operation.value} encontrado na árvore`
             : `Valor ${operation.value} não encontrado na árvore`);
         }
       }
@@ -157,7 +83,7 @@ export default function DataStructuresView() {
   const exportData = () => {
     const dataToExport = JSON.stringify(treeData);
     const filename = `dados-${selectedAlgorithm}.json`;
-    
+
     const blob = new Blob([dataToExport], { type: "application/json" });
     const href = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -192,15 +118,14 @@ export default function DataStructuresView() {
         </Select>
 
         <div className="flex gap-2">
-          <Button onClick={generateRandomTreeData} disabled={isRunning}>Gerar Árvore Aleatória</Button>
-          <Button variant="outline" onClick={exportData}>Exportar Dados</Button>
+          <Button onClick={exportData}>Exportar Dados</Button>
         </div>
       </div>
 
-      <TreeOperations 
-        onExecuteOperation={executeOperation} 
-        isRunning={isRunning} 
-        selectedAlgorithm={selectedAlgorithm} 
+      <TreeOperations
+        onExecuteOperation={executeOperation}
+        isRunning={isRunning}
+        selectedAlgorithm={selectedAlgorithm}
       />
 
       <Card>
